@@ -8,7 +8,12 @@ export default defineConfig({
   base: `/${REPO_NAME}`,
   integrations: [
     starlight({
-      title: 'Documentation SCALIA',
+      title: 'SCALIA Docs',
+      logo: {
+        src: './src/assets/scalia.jpg',
+        alt: 'Scalia',
+      },
+      customCss: ['./src/styles/custom.css'],
       social: {
         github: 'https://github.com/benguiii/DocScalia',
       },
@@ -17,12 +22,8 @@ export default defineConfig({
           label: 'Guides',
           items: [
             { label: 'Introduction', slug: 'guides/introduction' },
-            { label: 'Démarrage rapide', slug: 'guides/getting-started' },
+            { label: 'Déploiement GitHub Pages', slug: 'guides/getting-started' },
           ],
-        },
-        {
-          label: 'Référence',
-          autogenerate: { directory: 'reference' },
         },
       ],
     }),

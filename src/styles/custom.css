@@ -1,0 +1,131 @@
+/* ===========================
+   SCALIA THEME - Custom CSS
+   Rouge Scalia + Dark Mode moderne
+   =========================== */
+
+/* ---------- Dark theme (default) ---------- */
+:root {
+  --sl-color-accent-low: hsl(1, 50%, 15%);
+  --sl-color-accent: hsl(1, 78%, 55%);
+  --sl-color-accent-high: hsl(1, 85%, 85%);
+
+  --sl-color-white: hsl(0, 0%, 100%);
+  --sl-color-black: hsl(0, 0%, 8%);
+
+  --sl-color-gray-1: hsl(0, 0%, 93%);
+  --sl-color-gray-2: hsl(0, 0%, 80%);
+  --sl-color-gray-3: hsl(0, 0%, 64%);
+  --sl-color-gray-4: hsl(0, 0%, 39%);
+  --sl-color-gray-5: hsl(0, 0%, 20%);
+  --sl-color-gray-6: hsl(0, 0%, 13%);
+
+  --sl-font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+/* ---------- Light theme ---------- */
+:root[data-theme='light'] {
+  --sl-color-accent-low: hsl(1, 80%, 92%);
+  --sl-color-accent: hsl(1, 78%, 48%);
+  --sl-color-accent-high: hsl(1, 70%, 20%);
+
+  --sl-color-gray-1: hsl(0, 0%, 18%);
+  --sl-color-gray-2: hsl(0, 0%, 28%);
+  --sl-color-gray-3: hsl(0, 0%, 43%);
+  --sl-color-gray-4: hsl(0, 0%, 56%);
+  --sl-color-gray-5: hsl(0, 0%, 80%);
+  --sl-color-gray-6: hsl(0, 0%, 93%);
+  --sl-color-gray-7: hsl(0, 0%, 98%);
+
+  --sl-color-black: hsl(0, 0%, 100%);
+  --sl-color-white: hsl(0, 0%, 8%);
+}
+
+/* ---------- Hero section ---------- */
+.hero {
+  padding-block: 3rem !important;
+}
+
+.hero .tagline {
+  font-size: var(--sl-text-xl) !important;
+  opacity: 0.85;
+}
+
+/* ---------- Sidebar ---------- */
+nav.sidebar {
+  border-inline-end: 1px solid var(--sl-color-hairline);
+}
+
+nav.sidebar a[aria-current='page'] {
+  background: var(--sl-color-accent-low);
+  border-inline-start: 3px solid var(--sl-color-accent);
+  font-weight: 600;
+}
+
+/* ---------- Cards ---------- */
+.card {
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 0.75rem;
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px rgba(229, 57, 53, 0.12);
+  border-color: var(--sl-color-accent);
+}
+
+/* ---------- Link cards ---------- */
+.sl-link-card {
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.sl-link-card:hover {
+  box-shadow: 0 4px 12px rgba(229, 57, 53, 0.12);
+}
+
+/* ---------- Code blocks ---------- */
+.expressive-code {
+  border-radius: 0.75rem !important;
+  overflow: hidden;
+}
+
+/* ---------- Badges ---------- */
+.sl-badge {
+  border-radius: 999px;
+}
+
+/* ---------- Header ---------- */
+header.header {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ---------- Smooth scrolling ---------- */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ---------- Force red ---------- */
+:root {
+  --sl-color-purple-low: var(--sl-color-accent-low);
+  --sl-color-purple: var(--sl-color-accent);
+  --sl-color-purple-high: var(--sl-color-accent-high);
+
+  --sl-color-blue-low: var(--sl-color-accent-low);
+  --sl-color-blue: var(--sl-color-accent);
+  --sl-color-blue-high: var(--sl-color-accent-high);
+}
+
+:root[data-theme='light'] {
+  --sl-color-purple-low: var(--sl-color-accent-low);
+  --sl-color-purple: var(--sl-color-accent);
+  --sl-color-purple-high: var(--sl-color-accent-high);
+
+  --sl-color-blue-low: var(--sl-color-accent-low);
+  --sl-color-blue: var(--sl-color-accent);
+  --sl-color-blue-high: var(--sl-color-accent-high);
+}
+
+/* ---------- Custom selection color ---------- */
+::selection {
+  background: hsla(1, 78%, 55%, 0.3);
+}
