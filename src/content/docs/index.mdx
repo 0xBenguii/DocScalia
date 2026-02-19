@@ -1,0 +1,53 @@
+---
+title: Documentation SCALIA
+description: Documentation technique du projet de refonte de l'infrastructure Freemotion par l'ESN Scalia.
+template: splash
+hero:
+  tagline: Refonte du Système d'Information de FreeMotions, BAI26.2 Groupe 4 IPSSI Paris
+  image:
+    file: ../../assets/scalia.jpg
+    alt: Logo Scalia
+  actions:
+    - text: Explorer la documentation
+      link: /DocScalia/guides/introduction/
+      icon: right-arrow
+      variant: primary
+    - text: GitHub
+      link: https://github.com/benguiii/DocScalia
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+## Vue d'ensemble du projet
+
+<CardGrid>
+  <Card title="Infrastructure" icon="setting">
+    Proxmox VE, Active Directory, Azure AD Connect, déploiement zero-touch de 50 postes via Intune/Autopilot.
+  </Card>
+  <Card title="Réseau & Sécurité" icon="warning">
+    pfSense, VPN site-to-site Paris-Lyon, segmentation VLAN, DMZ, IDS/IPS Suricata, géoblocage.
+  </Card>
+  <Card title="Supervision" icon="magnifier">
+    Centreon/Zabbix, Grafana, audit OpenVAS, PingCastle, conformité RGPD.
+  </Card>
+  <Card title="Collaboration" icon="rocket">
+    Microsoft 365, Exchange Online, serveur de fichiers, Veeam Backup (3-2-1).
+  </Card>
+</CardGrid>
+
+## Accès rapide
+
+<CardGrid>
+  <LinkCard
+    title="Introduction"
+    description="Contexte du projet, périmètre, planning et équipe Scalia."
+    href="/DocScalia/guides/introduction/"
+  />
+  <LinkCard
+    title="Déploiement GitHub Pages"
+    description="Mettre en place Astro Starlight avec GitHub Actions."
+    href="/DocScalia/guides/getting-started/"
+  />
+</CardGrid>

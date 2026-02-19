@@ -1,0 +1,153 @@
+---
+title: Déploiement Astro avec GitHub Actions
+description: Mettre en place un site Astro Starlight déployé automatiquement sur GitHub Pages via GitHub Actions.
+---
+
+import { Steps, Aside, Badge, Tabs, TabItem } from '@astrojs/starlight/components';
+
+## Prérequis
+
+- Un dépôt GitHub <Badge text="Requis" variant="danger" />
+- Node.js v18 ou supérieur en local <Badge text="Requis" variant="danger" />
+- npm ou pnpm <Badge text="Requis" variant="danger" />
+
+## Initialiser le projet Astro Starlight
+
+<Steps>
+1. **Créer le projet**
+
+   ```bash
+   npm create astro@latest -- --template starlight
+   ```
+
+2. **Configurer `astro.config.mjs`**
+
+   Renseigner l'URL du site et le `base` path correspondant au nom du dépôt GitHub :
+
+   ```js
+   import { defineConfig } from 'astro/config';
+   import starlight from '@astrojs/starlight';
+
+   const REPO_NAME = 'MonRepo';
+
+   export default defineConfig({
+     site: 'https://<username>.github.io',
+     base: `/${REPO_NAME}`,
+     integrations: [
+       starlight({
+         title: 'Ma Documentation',
+         sidebar: [
+           {
+             label: 'Guides',
+             items: [
+               { label: 'Introduction', slug: 'guides/introduction' },
+             ],
+           },
+         ],
+       }),
+     ],
+   });
+   ```
+
+3. **Vérifier que le build fonctionne en local**
+
+   ```bash
+   npm run build
+   ```
+
+   Les fichiers statiques sont générés dans `dist/`.
+</Steps>
+
+## Créer le workflow GitHub Actions
+
+<Steps>
+1. **Créer le fichier** `.github/workflows/deploy.yml` à la racine du dépôt :
+
+   ```yaml
+   name: Deploy to GitHub Pages
+
+   on:
+     push:
+       branches: [main]
+     workflow_dispatch:
+
+   permissions:
+     contents: read
+     pages: write
+     id-token: write
+
+   concurrency:
+     group: "pages"
+     cancel-in-progress: false
+
+   jobs:
+     build:
+       runs-on: ubuntu-latest
+       steps:
+         - name: Checkout
+           uses: actions/checkout@v4
+
+         - name: Setup Node
+           uses: actions/setup-node@v4
+           with:
+             node-version: 20
+             cache: npm
+
+         - name: Setup Pages
+           uses: actions/configure-pages@v5
+
+         - name: Install dependencies
+           run: npm ci
+
+         - name: Build with Astro
+           run: npm run build
+
+         - name: Upload artifact
+           uses: actions/upload-pages-artifact@v3
+           with:
+             path: ./dist
+
+     deploy:
+       environment:
+         name: github-pages
+         url: ${{ steps.deployment.outputs.page_url }}
+       needs: build
+       runs-on: ubuntu-latest
+       steps:
+         - name: Deploy to GitHub Pages
+           id: deployment
+           uses: actions/deploy-pages@v4
+   ```
+
+2. **Ce que fait ce workflow :**
+
+   - Se déclenche à chaque push sur `main` (ou manuellement via `workflow_dispatch`)
+   - Installe Node.js 20 et les dépendances via `npm ci`
+   - Build le site Astro
+   - Upload le dossier `dist/` comme artifact
+   - Déploie l'artifact sur GitHub Pages
+
+3. **Commit et push**
+
+   ```bash
+   git add .github/workflows/deploy.yml
+   git commit -m "Ajout du workflow de déploiement GitHub Pages"
+   git push origin main
+   ```
+</Steps>
+
+## Activer GitHub Pages
+
+<Steps>
+1. Aller dans **Settings** du dépôt GitHub
+
+2. Section **Pages** dans le menu latéral
+
+3. Dans **Source**, sélectionner **GitHub Actions**
+
+4. Le prochain push sur `main` déclenchera le déploiement automatiquement
+</Steps>
+
+<Aside type="danger" title="Vérification">
+Après le premier déploiement, le site sera accessible à l'adresse `https://<username>.github.io/<repo-name>/`. Le workflow est visible dans l'onglet **Actions** du dépôt.
+</Aside>
