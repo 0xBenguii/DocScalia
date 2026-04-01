@@ -2,7 +2,6 @@
 title: Introduction
 description: Contexte, objectifs et périmètre du projet de refonte de l'infrastructure Freemotion par Scalia.
 ---
-
 import { Badge, Aside, Card, CardGrid } from '@astrojs/starlight/components';
 
 ## Présentation du client <Badge text="BAI26.2" variant="danger" />
@@ -13,20 +12,20 @@ L'infrastructure actuelle ne répond plus aux exigences de sécurité, de perfor
 
 ## Périmètre du projet
 
-L'ESN **Scalia** a été mandatée pour concevoir et déployer l'intégralité du nouveau SI de FreeMotions. Le projet couvre les axes suivants :
+L'ESN **Scalia** a été mandatée pour concevoir et déployer l'intégralité du nouveau SI de FreeMotions.
 
 <CardGrid>
   <Card title="Parc informatique" icon="laptop">
     Renouvellement de 50 postes (40 fixes, 10 portables) avec déploiement zero-touch via Intune/Autopilot, BitLocker et Defender.
   </Card>
   <Card title="Réseau & Sécurité" icon="warning">
-    VPN site-to-site Paris-Lyon (pfSense), segmentation VLAN, DMZ, IDS/IPS Suricata, pfBlockerNG et géoblocage.
+    VPN site-to-site Paris-Lyon (pfSense CARP), segmentation VLAN, DMZ, IDS/IPS Suricata, pfBlockerNG et géoblocage.
   </Card>
   <Card title="Identité & Annuaire" icon="setting">
-    Active Directory (Windows Server 2025), LAPS, SSSD pour Linux, Azure AD Connect, MFA et serveur bastion.
+    Active Directory (Windows Server 2025), LAPS, Azure AD Connect, MFA et PKI interne (ADCS).
   </Card>
   <Card title="Supervision & Audit" icon="magnifier">
-    Centreon/Zabbix avec dashboards "Météo des Services", audit de vulnérabilités OpenVAS, PingCastle pour l'AD.
+    Zabbix, Grafana, Wazuh SIEM, audit OpenVAS, PingCastle pour l'AD.
   </Card>
 </CardGrid>
 
@@ -35,31 +34,29 @@ L'ESN **Scalia** a été mandatée pour concevoir et déployer l'intégralité d
 | Domaine | Technologies |
 |---|---|
 | Virtualisation | Proxmox VE |
-| Réseau / UTM | pfSense, OPNsense, pfBlockerNG |
-| Annuaire | Active Directory, SSSD, Azure AD Connect |
-| Postes de travail | Windows 10/11 Pro, RDS|
+| Réseau / UTM | pfSense, Suricata IDS/IPS, pfBlockerNG |
+| Annuaire | Active Directory, Azure AD Connect, LAPS |
+| Postes de travail | Windows 11 Pro, RDS |
 | Messagerie & Collaboration | Microsoft 365, Exchange Online |
-| Stockage | Serveur de fichiers (FSRM, déduplication), Ceph/Nextcloud |
-| Sauvegarde | Veeam Backup (règle 3-2-1) |
-| Supervision |Zabbix, Wazuh, Grafana |
+| Stockage | Serveur de fichiers (FSRM), Veeam Backup (3-2-1) |
+| Supervision | Zabbix, Grafana, Wazuh SIEM |
 | Gestion de parc | GLPI |
-| Sécurité | Nmap, Nessus, OpenVAS, PingCastle |
-| Web |  Nginx, HaProxy |
+| Cloud & IaC | Exoscale, Terraform |
+| Sécurité offensive | Nmap, Nessus, PingCastle |
+| Web / Reverse Proxy | HAProxy, Nginx |
 
 ## Planning projet
 
-Le projet se découpe en **5 phases** sur une durée de 9 mois :
-
 | Phase | Période | Livrables |
 |---|---|---|
-| Lancement & Conception | Déc. 2025 - Jan. 2026 | Note de cadrage, architecture cible |
-| Maquettage | Fév. - Mars 2026 | Environnement de test, validation des choix techniques |
-| Déploiement & Migration | Avr. - Juin 2026 | Mise en production, migration des données |
+| Lancement & Conception | Déc. 2025 – Jan. 2026 | Note de cadrage, architecture cible |
+| Maquettage | Fév. – Mars 2026 | Environnement de test, validation des choix techniques |
+| Déploiement & Migration | Avr. – Juin 2026 | Mise en production, migration des données |
 | Sécurisation & Audits | Juil. 2026 | Pentests, durcissement, conformité RGPD |
 | Recette & Clôture | Août 2026 | PV de recette, documentation finale |
 
 <Aside type="danger" title="Échéance">
-Livraison finale prévue le **23 août 2026**. Budget avec écart toléré inférieur à 5%.
+  Livraison finale prévue le **23 août 2026**. Budget avec écart toléré inférieur à 5%.
 </Aside>
 
 ## Équipe Scalia
@@ -69,10 +66,11 @@ Livraison finale prévue le **23 août 2026**. Budget avec écart toléré infé
 | Chef de Projet / Sécurité & Réseau | Benjamin BACLE |
 | Ingénieur Infrastructure / Architecte AD | Axel DEGREMONT |
 | Ingénieure Systèmes & Déploiement | Sylia SIFFLET |
+| Technicien Système & Support | Tristan JEAN-FRANCOIS |
 
 ## Indicateurs de réussite
 
-- Disponibilité VPN > 99.9%
+- Disponibilité VPN > 99,9%
 - 0 vulnérabilité critique à la livraison
 - 100% des postes déployés en zero-touch
 - Conformité RGPD (centralisation syslog, rétention 6 mois, charte informatique)
