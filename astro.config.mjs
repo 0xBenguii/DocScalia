@@ -25,6 +25,26 @@ export default defineConfig({
             { label: 'Déploiement GitHub Pages', slug: 'guides/getting-started' },
           ],
         },
+        {
+          label: 'Gestion de Projet',
+          items: [
+            { label: 'Vue d\'ensemble', slug: 'gestion-projet' },
+            { label: 'RACI', slug: 'gestion-projet/raci' },
+            { label: 'WBS', slug: 'gestion-projet/wbs' },
+            { label: 'Planning & Gantt', slug: 'gestion-projet/planning' },
+            { label: 'Matrice des risques', slug: 'gestion-projet/risques' },
+            { label: 'Réunion hebdomadaire', slug: 'gestion-projet/reunion-hebdo' },
+          ],
+        },
+        {
+          label: 'Infrastructure',
+          items: [
+            { label: 'Vue d\'ensemble', slug: 'infrastructure' },
+            { label: 'Plan d\'adressage IP', slug: 'infrastructure/plan-adressage' },
+            { label: 'Topologie réseau', slug: 'infrastructure/topologie' },
+            { label: 'Budget RAM Proxmox', slug: 'infrastructure/budget-ram' },
+          ],
+        },
       ],
     }),
   ],
