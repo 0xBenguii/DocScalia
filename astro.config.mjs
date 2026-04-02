@@ -45,6 +45,13 @@ export default defineConfig({
             { label: 'Budget RAM Proxmox', slug: 'infrastructure/budget-ram' },
           ],
         },
+        {
+          label: 'Documentations Technique',
+          items: [
+            { label: 'Index', slug: 'doc-technique' },
+            { label: 'Active Directory', slug: 'doc-technique/active-directory' },
+          ],
+        },
       ],
     }),
   ],
