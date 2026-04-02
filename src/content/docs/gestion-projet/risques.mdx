@@ -2,5 +2,39 @@
 title: Matrice des risques
 description: Identification, évaluation et mitigation des risques du projet FreeMotions.
 ---
+import { Aside, Badge } from '@astrojs/starlight/components';
 
-*Contenu à venir.*
+La gestion des risques est un processus continu tout au long du projet. Chaque risque est identifié, évalué en termes de probabilité et d'impact, puis associé à une stratégie de mitigation concrète. La matrice est revue en réunion hebdomadaire et mise à jour à chaque changement de contexte.
+
+**Échelle probabilité :** Faible / Moyen / Fort
+**Échelle impact :** Faible / Moyen / Fort / Critique
+
+## Risques techniques
+
+| # | Risque | Proba | Impact | Mitigation |
+|---|---|---|---|---|
+| R01 | Incompatibilité pfSense CARP sur Proxmox (problèmes de broadcast multicast entre bridges virtuels) | Faible | Fort | Validation en lab isolé avant déploiement. Documentation officielle Netgate consultée. Tests de failover systématiques après chaque modification réseau. |
+| R02 | Saturation RAM Proxmox (dépassement du quota groupe 32–40 Go sur pve3-ovh) | Moyen | Fort | Budget RAM calculé et validé avant chaque déploiement de VM. Politique d'extinction des VM non utilisées. Monitoring Proxmox avec alertes seuil 85%. |
+| R03 | Tunnel VPN IPSec instable Paris–Lyon (perte de connectivité inter-site, timeout sessions AD) | Faible | Critique | IKEv2 avec DPD keepalive 10s, crypto AES-256-GCM/SHA-512, PFS DH14. Tests de charge et scénarios de bascule CARP validés. Monitoring Zabbix sur l'état du tunnel. |
+| R04 | Réplication AD Paris–Lyon défaillante (incohérence annuaire, authentification impossible Lyon) | Faible | Fort | RODC Lyon avec Password Replication Policy restrictive. Monitoring réplication via `repadmin /replsummary` + alerte Zabbix. PRA documenté avec procédure de resync. |
+| R05 | Faille critique détectée en phase pentest (CVE exploitable sur un service exposé en DMZ) | Moyen | Critique | Remédiation obligatoire avant livraison. Buffer de 3 semaines prévu (juillet 2026). Scan Nessus intermédiaire prévu en phase déploiement pour anticiper. |
+| R06 | Déploiement zero-touch MDT/WDS échoue (incompatibilité drivers, échec jonction domaine auto) | Moyen | Moyen | Tests sur VM pilote avant déploiement massif. Bibliothèque drivers maintenue à jour. Sylia + Tristan en binôme pour maximiser la couverture de test. |
+| R07 | Indisponibilité Exoscale ou non-confirmation du partenariat (pas d'accès aux ressources cloud gratuites) | Moyen | Moyen | Plan B documenté : Proxmox Backup Server local pour Veeam, DNS public chez un registrar classique. Modules Terraform rédigés mais non appliqués tant que le partenariat n'est pas confirmé. |
+
+## Risques organisationnels
+
+| # | Risque | Proba | Impact | Mitigation |
+|---|---|---|---|---|
+| R08 | Indisponibilité prolongée d'un membre de l'équipe (maladie, désengagement, conflit planning) | Moyen | Moyen | Binômage systématique sur toutes les tâches critiques (cf. RACI). Documentation au fil de l'eau sur DocScalia. Chaque membre peut reprendre le travail d'un autre sous 48h. |
+| R09 | Dérapage planning supérieur à 2 semaines (sous-estimation de complexité, blocage technique) | Faible | Fort | Réunion hebdo avec revue sprint et vélocité. Jalons intermédiaires imposés avec go/no-go. Escalade immédiate au chef de projet si retard détecté sur le chemin critique. |
+| R10 | Dépassement budget matériel / licences (coût imprévu sur une technologie ou un service cloud) | Faible | Moyen | Budget prévisionnel avec marge de 5%. Validation DG FreeMotions requise à chaque engagement financier. Priorisation des solutions open-source quand le niveau de service est équivalent. |
+
+## Risques sécurité
+
+| # | Risque | Proba | Impact | Mitigation |
+|---|---|---|---|---|
+| R11 | Compromission durant la phase de transition (attaque pendant la coexistence ancien/nouveau SI) | Faible | Critique | Security by Design : GPO de durcissement appliquées dès l'installation. Services exposés uniquement en DMZ derrière HAProxy. Suricata IDS/IPS actif dès le premier jour. Aucun service legacy en écoute sur le nouveau réseau. |
+| R12 | Phishing réussi sur les utilisateurs pilotes (vol de credentials, mouvement latéral) | Moyen | Moyen | Campagne de test phishing interne avant migration. Sensibilisation utilisateurs obligatoire. MFA activé sur tous les comptes M365 et VPN. Charte informatique signée par chaque collaborateur. |
+| R13 | Interférence entre groupes sur Proxmox mutualisé (conflit d'adressage, accès non autorisé à une VM) | Moyen | Fort | Isolation VLAN stricte par bridges dédiés (vmbr1→vmbr5). Nomenclature VM respectée (`[sqy-bai-262-eq9]`). Aucune VM connectée sur vmbr0 (réservé hôte). Vérification croisée des subnets avec les autres groupes. |
+
+
