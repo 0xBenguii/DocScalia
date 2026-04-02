@@ -1,6 +1,99 @@
 ---
 title: RACI
-description: Matrice de responsabilités du projet Scalia — FreeMotions.
+description: Matrice de responsabilités du projet Scalia - FreeMotions.
 ---
+import { Aside } from '@astrojs/starlight/components';
 
-*Contenu à venir.*
+La matrice **RACI** définit le niveau de responsabilité de chaque membre de l'équipe Scalia sur les grandes activités du projet. Elle garantit qu'aucune tâche critique ne repose sur un point de défaillance unique (**SPOF humain**) et que la chaîne de validation est clairement identifiée pour chaque livrable.
+
+**Légende :** 
+· **R** = Responsable (exécute la tâche) 
+· **A** = Approbateur (valide et rend des comptes) 
+· **C** = Consulté (expertise sollicitée avant/pendant) 
+· **I** = Informé (notifié du résultat)
+
+## Gestion de projet
+
+| Activité | Benjamin | Axel | Sylia | Tristan |
+|---|:---:|:---:|:---:|:---:|
+| Coordination & relation client (comités de pilotage, arbitrages périmètre/budget) | R/A | I | I | I |
+| WBS, Gantt, planning (découpage en sprints, suivi jalons, gestion des dépendances critiques) | R/A | C | C | I |
+| Matrice des risques (identification, cotation probabilité/impact, plans de mitigation, revue hebdo) | R/A | C | C | I |
+| Compte-rendus de réunion (CR hebdo, décisions tracées, actions avec deadline et owner) | R/A | I | I | I |
+
+## Réseau & Sécurité
+
+| Activité | Benjamin | Axel | Sylia | Tristan |
+|---|:---:|:---:|:---:|:---:|
+| Architecture réseau TO-BE (schéma L2/L3, segmentation VLAN, matrice de flux inter-zones) | R/A | C | I | I |
+| pfSense CARP Paris (cluster actif/passif, VIPs WAN .9 / LAN .1 / DMZ .1 / MGMT .1, sync XML) | R/A | I | I | I |
+| pfSense CARP Lyon (cluster actif/passif, VIPs WAN .39 / LAN .1, réplication config) | R/A | I | I | I |
+| VPN IPSec IKEv2 Paris–Lyon (tunnel site-to-site, DPD keepalive, crypto AES-256-GCM/SHA-512, PFS DH14) | R/A | I | I | I |
+| Suricata IDS/IPS (déploiement inline sur WAN, ruleset ET Open + custom, tuning faux positifs) | R/A | C | I | I |
+| Segmentation VLAN / DMZ (isolation LAN/DMZ/MGMT, règles firewall least-privilege, anti-spoofing) | R/A | C | I | I |
+| Reverse Proxy HAProxy x2 (load-balancing L7, terminaison TLS, health checks, failover actif/passif) | R/A | I | C | I |
+| Géoblocage pfBlockerNG (listes GeoIP, blocage pays hors UE/US, whitelist métier, feed DNSBL) | R/A | I | I | I |
+
+## Active Directory & Identité
+
+| Activité | Benjamin | Axel | Sylia | Tristan |
+|---|:---:|:---:|:---:|:---:|
+| Architecture AD (design forêt mono-domaine, arborescence OU par site/fonction, stratégie GPO par couche) | C | R/A | I | I |
+| DC01 & DC02 Paris (AD DS, DNS intégré, DHCP avec failover, réplication intra-site DFS-R) | I | R/A | I | I |
+| RODC Lyon (Read-Only DC, Password Replication Policy restrictive, cache credentials limité aux users Lyon) | I | R/A | I | I |
+| LAPS & délégation (rotation automatique mots de passe admin locaux, délégation lecture aux groupes habilités) | I | R/A | C | I |
+| PKI interne ADCS (CA racine offline, CA émettrice online, templates certificats machine/utilisateur, CRL/OCSP) | C | R/A | I | I |
+| Azure AD Connect / MFA (synchronisation hybride, password hash sync, Conditional Access, MFA obligatoire) | C | R/A | C | I |
+
+## Systèmes & Déploiement
+
+| Activité | Benjamin | Axel | Sylia | Tristan |
+|---|:---:|:---:|:---:|:---:|
+| Serveur de fichiers FSRM (quotas par service, filtrage extensions, classification automatique, audit d'accès) | I | C | R/A | C |
+| Serveur RDS RemoteApp (session broker, licences CAL, publication apps métier, profils itinérants) | I | R/A | C | I |
+| Déploiement WDS/MDT postes (master Windows 11, séquence de tâches zero-touch, drivers injection, jonction domaine auto) | I | I | R/A | C |
+| GLPI / ITAM / RUDDER (inventaire auto via agent, gestion tickets, CMDB, suivi cycle de vie matériel) | I | I | R/A | C |
+| Messagerie M365 (tenant config, Exchange Online, stratégies anti-spam/anti-phishing, DLP policies) | I | C | R/A | I |
+| BitLocker + Defender via GPO (chiffrement TPM+PIN, recovery keys dans AD, stratégies AV/EDR centralisées) | C | R | A | C |
+
+## Supervision
+
+| Activité | Benjamin | Axel | Sylia | Tristan |
+|---|:---:|:---:|:---:|:---:|
+| Zabbix (déploiement serveur + agents, templates SNMP/WMI, triggers seuils CPU/RAM/disque, alerting mail/Slack(si deploy..)) | C | I | R/A | I |
+| Grafana (dashboards temps réel, datasources Zabbix/Wazuh, vue "Météo des services" pour le management) | C | I | R/A | I |
+| Wazuh SIEM (collecte syslog centralisée, rules MITRE ATT&CK, détection brute-force/lateral movement, rétention 6 mois RGPD) | R/A | I | C | I |
+
+## Sécurité & Audit
+
+| Activité | Benjamin | Axel | Sylia | Tristan |
+|---|:---:|:---:|:---:|:---:|
+| Hardening ANSSI Linux BP028 (désactivation services inutiles, SSH key-only, firewalld, audit AIDE, sysctl durci) | R/A | C | I | I |
+| Hardening AD PingCastle (score < 10 cible, remédiation Kerberoasting/AS-REP roasting, tiering model, AdminSDHolder) | C | R/A | I | I |
+| Pentest Nmap / Nessus (scan réseau complet, identification CVE, rapport priorisé CVSS, remédiation avant livraison) | R/A | C | I | I |
+| Campagne phishing test (simulation spear-phishing, mesure taux de clic, sensibilisation post-campagne, rapport direction) | R/A | I | I | I |
+
+## Cloud & IaC
+
+| Activité | Benjamin | Axel | Sylia | Tristan |
+|---|:---:|:---:|:---:|:---:|
+| Exoscale VPC setup (réseau privé isolé, security groups, elastic IPs, peering avec infra on-prem) | R/A | I | I | I |
+| Terraform IaC (modules réutilisables, state remote, plan/apply CI-CD, versionning infra as code) | R/A | I | I | I |
+| Bastion SSH + Split-DNS (jump host durci, MFA, logs de session, DNS public/privé séparé pour résolution interne/externe) | R/A | I | I | I |
+| Bucket S3 Veeam backup cloud (chiffrement AES-256 at-rest, lifecycle policies, immutabilité Object Lock, test restauration trimestriel) | R/A | I | C | I |
+
+## Documentation & PRA
+
+| Activité | Benjamin | Axel | Sylia | Tristan |
+|---|:---:|:---:|:---:|:---:|
+| DocScalia CI/CD + contenu (site Astro Starlight, GitHub Actions auto-deploy, revue contenu par l'équipe) | R/A | C | C | I |
+| DAT - Dossier Architecture Technique (schémas réseau, matrices de flux, configurations de référence, choix technologiques argumentés) | A | R | C | I |
+| Procédures exploitation MCO (runbooks, procédures de bascule, escalade incident, astreinte) | C | C | R/A | C |
+| Rapport pentest / sécurité (executive summary, findings CVSS, preuves d'exploitation, recommandations priorisées) | R/A | C | I | I |
+| Tests bascule CARP (scénario panne FW maître, mesure temps de failover < 5s, validation continuité VPN) | R/A | C | I | I |
+| Tests restauration Veeam (restauration VM complète, granulaire fichiers, RTO/RPO mesurés vs SLA contractuel) | C | I | R/A | C |
+| Recette finale UAT (cahier de recette, PV signé, validation fonctionnelle par FreeMotions, levée des réserves) | A | C | R | C |
+
+<Aside type="tip" title="Principe de binômage">
+  Aucune tâche critique n'est détenue par une seule personne. Chaque activité R/A dispose d'au moins un Consulté capable de reprendre en cas d'indisponibilité conformément à une vraie politique de continuité d'activité interne.
+</Aside>
