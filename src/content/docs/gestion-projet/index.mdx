@@ -1,0 +1,52 @@
+---
+title: Gestion de Projet
+description: Vue d'ensemble de la gestion de projet Scalia - FreeMotions.
+---
+import { Card, CardGrid, Aside, Badge } from '@astrojs/starlight/components';
+
+Le projet de refonte du SI de FreeMotions est conduit par l'ESN **Scalia** selon une méthodologie **Agile/Scrum** structurée en 8 sprints de 2 semaines, du lancement en décembre 2025 à la livraison finale le **23 août 2026**.
+
+L'équipe de 4 personnes Benjamin BACLE, Axel DEGREMONT, Sylia SIFFLET et Tristan JEAN-FRANCOIS opère avec des rôles clairement définis, une cadence de réunion hebdomadaire le lundi matin, et une documentation continue sur ce site, versionnée via CI/CD GitHub Actions.
+
+<Aside type="danger" title="Jalon impératif">
+  Livraison finale le **23 août 2026**. Toute remédiation de faille détectée en phase pentest doit être clôturée avant le **31 juillet 2026**.
+</Aside>
+
+## Où en sommes-nous ?
+
+| Phase | Période | Statut |
+|---|---|---|
+| Lancement & Conception | Déc. 2025 – Jan. 2026 | ✅ Terminé |
+| Maquettage Proxmox - socle réseau | Fév. 2026 | 🔵 En cours |
+| Services Paris & Lyon | Mars 2026 | 🔴 À venir |
+| DMZ + Exoscale Terraform | Avr. 2026 | 🔴 À venir |
+| Supervision + Hardening ANSSI | Mai–Juin 2026 | 🔴 À venir |
+| PRA/PCA + Pentest + Recette | Juil. 2026 | 🔴 À venir |
+| Documentation finale + Soutenance | Août 2026 | 🔴 À venir |
+
+## Livrables de gestion de projet
+
+<CardGrid>
+  <Card title="RACI" icon="list-format">
+    Matrice de responsabilités des 4 membres de l'équipe sur l'ensemble des activités du projet.
+  </Card>
+  <Card title="WBS" icon="open-book">
+    Découpage complet du projet en 6 lots et 40+ tâches élémentaires, du cadrage à la livraison.
+  </Card>
+  <Card title="Planning & Gantt" icon="rocket">
+    Calendrier prévisionnel sur 9 mois avec jalons intermédiaires et sprints Agile.
+  </Card>
+  <Card title="Matrice des risques" icon="warning">
+    13 risques identifiés (techniques, organisationnels, sécurité) avec stratégies de mitigation.
+  </Card>
+</CardGrid>
+
+## Principes de conduite du projet
+
+**Documentation continue** - chaque configuration déployée, chaque décision technique est documentée dans la foulée sur DocScalia et versionnée via Git. Aucune tâche critique n'est considérée terminée sans sa documentation associée.
+
+**Binômage** - aucune compétence critique n'est détenue par une seule personne. Le RACI garantit qu'un Consulté est toujours en mesure de reprendre une tâche en cas d'indisponibilité d'un membre.
+
+**Security by Design** - les règles de durcissement ANSSI et les GPO de sécurité sont appliquées dès l'installation de chaque service, pas en phase finale.
+
+**Revue hebdomadaire** - chaque samedi (en fonction des disponibilités de chacun), l'équipe fait le point sur l'avancement du sprint, les blocages et les risques. Le compte-rendu est commité sur DocScalia dans les 24h.
