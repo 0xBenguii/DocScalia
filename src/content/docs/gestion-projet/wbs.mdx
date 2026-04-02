@@ -2,5 +2,94 @@
 title: WBS — Work Breakdown Structure
 description: Décomposition structurée de l'ensemble des tâches du projet FreeMotions.
 ---
+import { Aside } from '@astrojs/starlight/components';
 
-*Contenu à venir.*
+Le WBS décompose le projet en livrables et tâches élémentaires, organisés par phase. Chaque tâche est rattachée à un lot identifié, ce qui permet un suivi granulaire de l'avancement et une traçabilité complète des livrables attendus.
+
+## 1. Lancement & Conception
+
+- 1.1 Note de cadrage (périmètre, objectifs, contraintes, critères de réussite) ✅
+- 1.2 Budget prévisionnel (matériel, licences, cloud, marge 5%) ✅
+- 1.3 Analyse CDC FreeMotions & identification des besoins métier ✅
+- 1.4 Définition architecture TO-BE (schéma L2/L3, matrice de flux, choix technologiques argumentés) ✅
+- 1.5 WBS & Gantt initiaux (découpage en sprints, jalons intermédiaires, dépendances critiques) ✅
+- 1.6 RACI 4 membres (matrice complète par domaine, validation du principe de binômage) ✅
+- 1.7 Matrice des risques préliminaire (13 risques identifiés, cotation probabilité/impact, plans de mitigation) ✅
+
+## 2. Maquettage Proxmox
+
+### 2.1 Socle réseau
+- 2.1.1 Accès Proxmox pve3-ovh & plan de nommage VM (nomenclature `[sqy-bai-262-eq9]`) ✅
+- 2.1.2 Plan d'adressage IP & mapping bridges vmbr1→vmbr5 🔵
+- ------------------------------------NOK----------------------------------------
+- 2.1.3 Création templates VM (Debian 12, Windows Server 2025, pfSense)
+- 2.1.4 Déploiement pfSense Paris 01 (WAN .19, LAN .2, interfaces DMZ/MGMT, règles initiales)
+- 2.1.5 Déploiement pfSense Paris 02 + configuration CARP (sync XML, VIPs .9/.1, preempt désactivé)
+- 2.1.6 Déploiement pfSense Lyon 01 + 02 + CARP (WAN .49/.59, VIP .39, LAN .2/.3)
+- 2.1.7 VPN IPSec IKEv2 site-à-site Paris–Lyon (AES-256-GCM, SHA-512, DH14, DPD 10s)
+- 2.1.8 Configuration Suricata IDS/IPS (mode inline WAN, ruleset ET Open, tuning faux positifs)
+- 2.1.9 pfBlockerNG & géoblocage (listes GeoIP, blocage hors UE/US, feeds DNSBL malware/ads)
+
+### 2.2 Active Directory Paris
+- 2.2.1 Déploiement DC01-Paris PRS-DC-01 (AD DS, DNS intégré, DHCP failover, IP .10)
+- 2.2.2 Déploiement DC02-Paris PRS-DC-02 (réplication AD intra-site, DFS-R sysvol, IP .11)
+- 2.2.3 Création forêt mono-domaine, arborescence OU par site/fonction, stratégie GPO par couche
+- 2.2.4 Déploiement GPO de sécurité (mot de passe 14 chars, verrouillage compte, audit logon, AppLocker)
+- 2.2.5 Configuration LAPS (rotation auto admin local, délégation lecture groupes habilités, audit)
+- 2.2.6 PKI interne ADCS (CA racine offline, CA émettrice online, templates machine/utilisateur, CRL/OCSP)
+- 2.2.7 Azure AD Connect + MFA (password hash sync, Conditional Access, MFA obligatoire tous comptes)
+
+### 2.3 Active Directory Lyon
+- 2.3.1 Déploiement RODC Lyon LY-DCRO-01 (Password Replication Policy restrictive, cache credentials limité, IP .10)
+- 2.3.2 Réplication AD Paris–Lyon (vérification via `repadmin /replsummary`, monitoring Zabbix)
+
+### 2.4 Services Paris
+- 2.4.1 Serveur de fichiers PRS-FILE-01 (FSRM quotas/filtrage, partages par service, audit d'accès, IP .20)
+- 2.4.2 Serveur RDS RemoteApp PRS-RDS-01 (session broker, licences CAL, publication apps métier, IP .21)
+- 2.4.3 GLPI / ITAM PRS-ITAM-01 (inventaire auto agent, gestion tickets, CMDB, cycle de vie matériel, IP .22)
+- 2.4.4 Déploiement WDS/MDT postes zero-touch (master Win11, task sequence, drivers injection, jonction domaine auto)
+- 2.4.5 Messagerie Microsoft 365 & Exchange Online (tenant config, anti-spam/phishing, DLP policies)
+- 2.4.6 BitLocker + Defender via GPO (chiffrement TPM+PIN, recovery keys AD, stratégies AV/EDR)
+
+### 2.5 DMZ
+- 2.5.1 Reverse Proxy HAProxy PRS-RVP-01 (load-balancing L7, terminaison TLS Let's Encrypt, health checks, IP .10)
+- 2.5.2 Reverse Proxy HAProxy PRS-RVP-02 (failover actif/passif, même config, IP .11)
+- 2.5.3 Serveurs web PRS-WEB-01/02/03 (Nginx, déploiement applicatif, IPs .20/.21/.22)
+
+## 3. Cloud Exoscale
+- 3.1 Setup VPC Exoscale (réseau privé isolé, security groups, elastic IPs)
+- 3.2 Infrastructure as Code Terraform (modules réutilisables, state remote, plan/apply via CI-CD)
+- 3.3 Bastion SSH (jump host durci, MFA, journalisation sessions, accès restreint par IP source)
+- 3.4 Split-DNS public (résolution interne via AD DNS, résolution externe via Exoscale, cohérence des enregistrements)
+- 3.5 Bucket S3 Veeam (chiffrement AES-256 at-rest, Object Lock immutabilité, lifecycle policies rétention)
+- 3.6 EXO-FW (firewall cloud, règles least-privilege, logs centralisés vers Wazuh)
+
+## 4. Supervision & Sécurité
+- 4.1 Déploiement Zabbix ADM-ZABBIX (serveur + agents, templates SNMP/WMI, triggers seuils, alerting, IP .10)
+- 4.2 Déploiement Grafana ADM-GRAFANA (datasources Zabbix/Wazuh, dashboards temps réel, vue météo services, IP .11)
+- 4.3 Déploiement Wazuh SIEM ADM-WAZUH (collecte syslog, rules MITRE ATT&CK, détection brute-force/lateral movement, IP .12)
+- 4.4 Hardening ANSSI Linux BP028 (SSH key-only, firewalld, services inutiles désactivés, audit AIDE, sysctl durci)
+- 4.5 Hardening AD PingCastle (score cible < 10, remédiation Kerberoasting/AS-REP roasting, tiering model)
+- 4.6 Charte informatique & RGPD (rétention syslog 6 mois, consentement, registre de traitements, DPO identifié)
+- 4.7 Campagne phishing test (simulation spear-phishing, mesure taux de clic, sensibilisation, rapport direction)
+
+## 5. PRA / PCA & Recette
+- 5.1 Tests de bascule CARP (scénario panne FW maître, mesure failover < 5s, validation continuité VPN et services)
+- 5.2 Tests restauration Veeam (restauration VM complète + granulaire fichiers, mesure RTO/RPO vs SLA)
+- 5.3 Pentest Nmap + Nessus (scan réseau complet, identification CVE, rapport priorisé CVSS, remédiation)
+- 5.4 Audit AD PingCastle final (validation score < 10, vérification tiering, AdminSDHolder, Kerberos config)
+- 5.5 Remédiation failles détectées (deadline 31/07/2026, re-scan validation, PV de clôture)
+- 5.6 Plan de recette UAT (cahier de recette, scénarios fonctionnels, critères d'acceptation)
+- 5.7 Vérification KPIs (VPN > 99,9%, 0 CVE critique, 100% postes zero-touch, conformité RGPD)
+
+## 6. Documentation & Clôture
+- 6.1 Documentation DocScalia complète (toutes pages remplies, revue croisée, cohérence vérifiée)
+- 6.2 DAT — Dossier d'Architecture Technique (schémas réseau, matrices de flux, configurations de référence)
+- 6.3 Procédures exploitation & MCO (runbooks, procédures bascule, escalade incident, astreinte)
+- 6.4 Rapport sécurité & pentest (executive summary, findings CVSS, preuves d'exploitation, recommandations)
+- 6.5 Préparation slides soutenance (structure, démo live, Q&A anticipées)
+- 6.6 🏁 Livraison finale — 23/08/2026
+
+<Aside type="danger" title="Jalon impératif">
+  La livraison finale du **23/08/2026** est non négociable. Toute remédiation de faille détectée en phase pentest doit être clôturée avant le **31/07/2026**.
+</Aside>
