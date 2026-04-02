@@ -1,0 +1,47 @@
+---
+title: Active Directory
+description: Vue d'ensemble de mis en place de l'Active Directory pour le projet Scalia - FreeMotions.
+---
+import { Aside } from '@astrojs/starlight/components';
+
+## Introduction
+
+Dans le cadre du projet refonte du système d'information de l'entreprise Freemotion, la mise en place d'une infrastructure d'annuaire basée sur **Active Directory Domain Services (AD DS)** vise à centraliser la gestion des identités, des ressources et des politiques de sécurité au sein du système d'information.
+
+L'architecture retenue repose sur :
+
+- Deux **contrôleurs de domaine (DC)** situés à Paris
+- Un **contrôleur de domaine en lecture seule (RODC)** situé à Lyon
+
+Cette organisation permet :
+
+- D'assurer la **haute disponibilité** des services d'annuaire
+- D'optimiser les **performances d'authentification** pour les sites distants
+- De réduire les **risques de compromission** dans un environnement physique non sécurisé (site de Lyon)
+
+Le choix d'un **RODC** *(Read-Only Domain Controller)* pour le site de Lyon est motivé par l'absence de sécurité physique fiable. Cette solution permet de limiter l'exposition des données sensibles de l'annuaire tout en répondant au besoin de fournir un service d'authentification local.
+
+## Architecture de l'infrastructure
+
+### Vue d'ensemble
+
+| Propriété       | Valeur              |
+|----------------|---------------------|
+| Domaine        | `freemotion.fr`  |
+| Site principal | Paris               |
+| Site distant   | Lyon                |
+
+### Répartition des rôles
+
+| Serveur          | Rôle                                          |
+|-----------------|-----------------------------------------------|
+| **PRS-DC-01** (Paris)  | Contrôleur de domaine principal + rôles FSMO  |
+| **PRS-DC-02** (Paris)  | Contrôleur de domaine secondaire (redondance) |
+| **LY-DCRO-01** (Lyon) | Contrôleur de domaine en lecture seule        |
+
+### Topologie réseau
+
+- **Lien inter-site** : réseau interne non sécurisé physiquement
+- **Réplication AD** :
+  - Complète entre **PRS-DC-01** et **PRS-DC-02**
+  - Lecture seule vers **LY-DCRO-01**
