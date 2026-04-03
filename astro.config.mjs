@@ -15,7 +15,7 @@ export default defineConfig({
       },
       customCss: ['./src/styles/custom.css'],
       social: {
-        github: 'https://github.com/benguiii/DocScalia',
+        github: 'https://github.com/0xBenguii/DocScalia',
       },
       sidebar: [
         {
