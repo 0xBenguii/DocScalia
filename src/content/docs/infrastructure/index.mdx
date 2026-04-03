@@ -2,5 +2,47 @@
 title: Infrastructure
 description: Vue d'ensemble de l'infrastructure cible FreeMotions déployée par Scalia.
 ---
+import { Card, CardGrid, Aside, Badge } from '@astrojs/starlight/components';
 
-*Contenu à venir.*
+L'infrastructure cible de FreeMotions est conçue selon les principes du **Security by Design** et de la **haute disponibilité**. Chaque composant est dimensionné pour répondre aux besoins des 50 collaborateurs répartis sur deux sites géographiques - le siège social de Paris et la succursale de Lyon - tout en garantissant la continuité de service et la conformité aux recommandations de l'ANSSI.
+
+L'ensemble de l'infrastructure est virtualisé sur **Proxmox VE** pour le maquettage, et sera déployé sur des serveurs physiques dédiés en production. Le cloud **Exoscale** complète l'architecture on-premise pour les services exposés et la sauvegarde externalisée.
+
+<Aside type="caution" title="Note maquette Proxmox">
+  En production, les sites Paris et Lyon sont géographiquement séparés. La maquette simule les deux sites sur un hyperviseur unique **(pve3-ovh)** via des bridges distincts (vmbr).
+</Aside>
+
+## Principes d'architecture
+
+**Haute disponibilité** : les points de défaillance uniques (SPOF) sont éliminés sur les composants critiques. Les firewalls pfSense sont déployés en binôme avec basculement automatique via **CARP** (Common Address Redundancy Protocol). Les contrôleurs de domaine sont redondés (DC01 + DC02 à Paris, RODC à Lyon).
+
+**Segmentation réseau stricte** : l'infrastructure est découpée en zones d'isolation distinctes (LAN, DMZ, Management, WAN) interconnectées uniquement via les règles de filtrage pfSense. Aucun flux ne transite d'une zone à l'autre sans règle explicite validée.
+
+**Zéro confiance sur les postes** : chaque poste de travail est considéré comme potentiellement compromis. BitLocker, Microsoft Defender et les GPO de durcissement sont appliqués dès le déploiement zero-touch via MDT/WDS.
+
+**Sauvegarde 3-2-1** : trois copies des données, sur deux supports différents, dont une copie externalisée sur le bucket S3 Exoscale via Veeam Backup.
+
+## Zones réseau
+
+| Zone | Subnet | Rôle |
+|---|---|---|
+| LAN Paris | 10.9.75.0/24 | Postes fixes, serveurs internes |
+| DMZ Paris | 10.9.175.0/24 | Services exposés (reverse proxy, web) |
+| Management | 10.9.99.0/24 | Supervision, SIEM, accès admin |
+| LAN Lyon | 10.9.69.0/24 | Postes nomades, RODC |
+| WAN (maquette) | 192.168.254.0/24 | Lien Internet simulé via vmbr1 |
+| Cloud Exoscale | VPC privé | Bastion SSH, Split-DNS, Object Storage |
+
+## Documentation technique
+
+<CardGrid>
+  <Card title="Plan d'adressage IP" icon="list-format">
+    Subnets, VIPs CARP, IPs fixes de tous les services par zone réseau. Mapping complet des bridges Proxmox.
+  </Card>
+  <Card title="Topologie réseau" icon="random">
+    Architecture multisite Paris–Lyon avec DMZ, Management et cloud Exoscale. Schéma et flux inter-zones.
+  </Card>
+  <Card title="Budget RAM Proxmox" icon="laptop">
+    Calcul détaillé de la consommation RAM par VM dans le quota 32–40 Go alloué au groupe.
+  </Card>
+</CardGrid>
