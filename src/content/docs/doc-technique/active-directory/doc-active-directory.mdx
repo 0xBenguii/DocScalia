@@ -1,0 +1,276 @@
+---
+title: Active Directory
+description: Vue d'ensemble de mis en place de l'Active Directory pour le projet Scalia - FreeMotions.
+---
+import {LinkButton, Steps, Badge, Aside, Card, CardGrid, StarlightIcon } from '@astrojs/starlight/components';
+
+## Introduction
+
+Dans le cadre du projet de refonte du système d'information de l'entreprise **Freemotion**, la mise en place d'une infrastructure d'annuaire basée sur **Active Directory Domain Services (AD DS)** vise à centraliser la gestion des identités, des ressources et des politiques de sécurité au sein du système d'information.
+
+L'architecture retenue repose sur :
+
+- Deux **contrôleurs de domaine (DC)** situés à **Paris**Lyon
+- Un **contrôleur de domaine en lecture seule (RODC)** situé à **Lyon**
+
+Cette organisation permet :
+
+- D'assurer la **haute disponibilité** des services d'annuaire
+- D'optimiser les **performances d'authentification** pour les sites distants
+- De réduire les **risques de compromission** dans un environnement physique non sécurisé *(site de Lyon)*
+
+Le choix d'un **RODC** *(Read-Only Domain Controller)* pour le site de Lyon est motivé par l'absence de sécurité physique fiable. Cette solution permet de limiter l'exposition des données sensibles de l'annuaire tout en répondant au besoin de fournir un service d'authentification local.
+
+## Architecture de l'infrastructure
+
+### Vue d'ensemble
+
+| Propriété       | Valeur             |
+|----------------|--------------------|
+| Domaine        | `freemotion.fr`    |
+| Site principal | Paris              |
+| Site distant   | Lyon               |
+
+### Répartition des rôles
+
+| Serveur                | Site  | Rôle                                          |
+|------------------------|-------|-----------------------------------------------|
+| **PRS-DC-01**          | Paris | Contrôleur de domaine principal + rôles FSMO  |
+| **PRS-DC-02**          | Paris | Contrôleur de domaine secondaire (redondance) |
+| **LY-RODC-01**         | Lyon  | Contrôleur de domaine en lecture seule        |
+
+
+
+### Topologie réseau
+
+- **Lien inter-site** :  
+
+<Aside type="note" title="Interconnexion des sites">
+  Les deux sites sont interconnectés via un lien WAN. Le site de Lyon (**LY-RODC-01**) ne dispose pas de sécurité physique fiable, ce qui justifie l'utilisation d'un contrôleur en lecture seule.
+</Aside>
+
+### Adressage réseau
+
+| Serveur          | Site  | IP               | Réseau LAN      |
+|------------------|-------|------------------|-----------------|
+| **PRS-DC-01**    | Paris | `10.9.75.10/24`  |LAN Paris `10.9.75.0/24`   |
+| **PRS-DC-02**    | Paris | `10.9.75.11/24`  |LAN Paris `10.9.75.0/24`   |
+| **LY-RODC-01**   | Lyon  | `10.9.69.10/24`  |LAN Lyon `10.9.69.0/24`   |
+
+
+
+## Prérequis
+
+### Prérequis matériel
+
+- Serveurs physiques ou virtuels 
+- Connectivité réseau entre Paris et Lyon
+
+### Prérequis système
+
+| Composant       | Minimum recommandé                        |
+|-----------------|-------------------------------------------|
+| **OS**          | Windows Server 2025 Datacenter            |
+| **RAM**         | 4 Go minimum                              |
+| **Stockage**    | 60 Go minimum pour le système             |
+| **Réseau**      | Adresse IP statique obligatoire           |
+| **DNS**         | Pointé vers lui-même (futur DC)           |
+
+### Rôles Windows Server à installer
+
+Les rôles suivants doivent être installés sur chaque contrôleur de domaine :
+
+- **AD DS** *(Active Directory Domain Services)* : service d'annuaire principal
+- **DNS** : résolution de noms intégrée à l'Active Directory
+
+## Installation du rôle AD DS
+
+<Aside type="caution" title="Ordre de promotion">
+  Respecter l'ordre suivant : **PRS-DC-01** → **PRS-DC-02** → **LY-RODC-01**. Le RODC ne peut être promu qu'une fois le domaine et au moins un DC accessible.
+</Aside>
+
+
+L'installation s'effectue via le **Gestionnaire de serveur** :
+
+![Gestionnaire de serveur](../../../../assets/doc-technique/active-directory/ad-gestionnaire-srv.png)
+<Steps>
+1. Cliquer sur **"Ajouter des rôles et des fonctionnalités"**
+2. Sélectionner **"Installation basée sur un rôle ou une fonctionnalité"**
+3. Sélectionner le serveur cible
+4. Cocher **"Services AD DS"**
+</Steps>
+
+![Rôle AD DS](../../../../assets/doc-technique/active-directory/ad-selection-role-adds.png)
+
+<Steps>
+5. Cliquer sur **"Ajouter des fonctionnalités"** lorsque demandé
+6. Cliquer sur **"Installer"**
+</Steps>
+
+![Installation du rôle AD DS](../../../../assets/doc-technique/active-directory/ad-install-role.png)
+
+## Promotion en contrôleur de domaine
+
+### PRS-DC-01 — Création du domaine
+<Steps>
+
+1. Cliquer sur **"Promouvoir ce serveur en contrôleur de domaine"**
+![Promotion AD DS](../../../../assets/doc-technique/active-directory/ad-promotion-dc.png)
+
+2. Sélectionner **"Ajouter une nouvelle forêt"**
+3. Renseigner le nom de domaine racine : `freemotion.fr`
+![Configuration de la nouvelle forêt](../../../../assets/doc-technique/active-directory/ad-dc01-nouvelle-foret.png)
+
+4. Définir le **niveau fonctionnel** de la forêt et du domaine
+5. Cocher **"Serveur DNS"**
+6. Définir le mot de passe **DSRM** *(Directory Services Restore Mode)*
+![Configuration du mot de passe DSRM](../../../../assets/doc-technique/active-directory/ad-dc01-mdp-dsrm.png)
+
+7. Dans l'écran **"Chemins d'accès"**, modifier les chemins par défaut :
+![Configuration du chemins des dossiers SYSVOL et NTDS](../../../../assets/doc-technique/active-directory/ad-dc01-dossier-sysvol-ntds.png)
+
+</Steps>
+<Aside type="tip" title="Déplacement des dossiers NTDS et SYSVOL">
+  Il est recommandé de stocker **NTDS** et **SYSVOL** sur un volume dédié (ici `S:\`) séparé du système (`C:\`). 
+  Cela permet :
+  - D'améliorer les **performances**
+  - De faciliter les **sauvegardes**
+  - De réduire les risques en cas de **saturation du disque système**
+</Aside>
+
+<Steps>
+8. Vérifier le résumé puis cliquer sur **"Installer"**
+</Steps>
+
+![DC01S](../../../../assets/doc-technique/active-directory/ad-dc01.png)
+
+Le serveur **PRS-DC-01** a été promu en tant que premier contrôleur de domaine, créant ainsi la forêt et le domaine freemotion.fr`. 
+
+
+### PRS-DC-02 — Ajout au domaine existant
+
+`PRS-DC-02` rejoint le domaine en tant que contrôleur de domaine secondaire.
+
+#### 1. Intégration au domaine
+
+Avant la promotion, le serveur doit rejoindre le domaine `freemotion.fr` :
+
+<Steps>
+
+1. Ouvrir les **Propriétés système** *(clic droit sur "Ce PC" → Propriétés)*
+2. Cliquer sur **"Modifier les paramètres"**
+3. Cliquer sur **"Modifier"**
+4. Sélectionner **"Domaine"** et renseigner `freemotion.fr`
+5. Fournir les **informations d'identification** d'un administrateur du domaine
+![Intégration au domaine](../../../../assets/doc-technique/active-directory/ad-dc02-integration-domaine.png)
+
+6. Redémarrer le serveur
+
+</Steps>
+
+
+#### 2. Promotion en contrôleur de domaine secondaire
+
+L'installation s'effectue via le **Gestionnaire de serveur** :
+
+<Steps>
+1. Cliquer sur **"Promouvoir ce serveur en contrôleur de domaine"**
+![Promotion AD DS](../../../../assets/doc-technique/active-directory/ad-promotion-dc.png)
+
+2. Sélectionner **"Ajouter un contrôleur de domaine à un domaine existant"**
+
+3. Renseigner le domaine : `freemotion.fr`
+![Ajout du DC secondaire au domaine](../../../../assets/doc-technique/active-directory/ad-dc02-domaine.png)
+
+4. Fournir les **informations d'identification** d'un administrateur du domaine
+![Ajout du DC secondaire au domaine](../../../../assets/doc-technique/active-directory/ad-dc02-domaine2.png)
+
+5. Cocher **"Serveur DNS"** et **"Catalogue global (GC)"**
+
+6. Définir le mot de passe **DSRM** *(Directory Services Restore Mode)*
+![Ajout du DC secondaire au domaine](../../../../assets/doc-technique/active-directory/ad-dc02-mdp-dsrm.png)
+
+7. Laisser la **réplication** s'effectuer depuis `PRS-DC-01`
+![Ajout du DC secondaire au domaine](../../../../assets/doc-technique/active-directory/ad-dc02-replication-dc01.png)
+
+8. Dans l'écran **"Chemins d'accès"**, modifier les chemins par défaut :
+![Ajout du DC secondaire au domaine](../../../../assets/doc-technique/active-directory/ad-dc02-dossier-sysvol-ntds.png)
+
+9. Vérifier le résumé puis cliquer sur **"Installer"**
+![Ajout du DC secondaire au domaine](../../../../assets/doc-technique/active-directory/ad-dc02.png)
+
+</Steps>
+
+<Aside title="Réplication initiale">
+  Après la promotion, `PRS-DC-02` va répliquer l'intégralité de l'annuaire depuis `PRS-DC-01`.
+</Aside>
+
+### LY-RODC-01 — Promotion RODC
+
+`LY-RODC-01` est rejoint le domaine en contrôleur de domaine en lecture seule :
+
+#### 1. Intégration au domaine
+
+Avant la promotion, le serveur doit rejoindre le domaine `freemotion.fr` :
+
+<Steps>
+1. Ouvrir les **Propriétés système** *(clic droit sur "Ce PC" → Propriétés)*
+
+2. Cliquer sur **"Modifier les paramètres"**
+
+3. Cliquer sur **"Modifier"**
+
+4. Sélectionner **"Domaine"** et renseigner `freemotion.fr`
+![Pré-création du compte RODC](../../../../assets/doc-technique/active-directory/ad-rodc01-integration-domaine.png)
+
+5. Fournir les **informations d'identification** d'un administrateur du domaine
+![Pré-création du compte RODC](../../../../assets/doc-technique/active-directory/ad-rodc01-integration-domaine2.png)
+
+6. Redémarrer le serveur
+</Steps>
+
+#### 2. Promotion en contrôleur de domaine en lecture seul 
+
+<Steps>
+
+1. Cliquer sur **"Promouvoir ce serveur en contrôleur de domaine"**
+![Ajout du RODC au domaine](../../../../assets/doc-technique/active-directory/ad-promotion-dc.png)
+
+2. Sélectionner **"Ajouter un contrôleur de domaine à un domaine existant"**
+
+3. Renseigner le domaine : `freemotion.fr`
+![Ajout du RODC au domaine](../../../../assets/doc-technique/active-directory/ad-rodc01-domaine.png)
+4. Fournir les **informations d'identification** d'un administrateur du domaine
+![Ajout du RODC au domaine](../../../../assets/doc-technique/active-directory/ad-rodc01-domaine2.png)
+
+5. Cocher **"Contrôleur de domaine en lecture seule (RODC)"** et **"Serveur DNS"**
+
+6. Définir le mot de passe **DSRM** *(Directory Services Restore Mode)*
+![Ajout du RODC au domaine](../../../../assets/doc-technique/active-directory/ad-rodc01-mdp-dsrm.png)
+
+7. Laisser la **Stratégie de réplication des mots de passe (PRP)** par défaut
+![Ajout du RODC au domaine](../../../../assets/doc-technique/active-directory/ad-rodc01-prp-default.png)
+
+    <Aside type="note" title="Configuration de la PRP">
+     La PRP sera configurée dans une étape dédiée, après la mise en place des Sites et Services AD. Voir la section [Stratégie de réplication des mots de passe (PRP)](../doc-site-services-ad)
+    </Aside>
+
+8. Dans l'écran **"Chemins d'accès"**, modifier les chemins par défaut :
+![Ajout du RODC au domaine](../../../../assets/doc-technique/active-directory/ad-rodc01-dossier-sysvol-ntds.png)
+
+9. Vérifier le résumé puis cliquer sur **"Installer"**
+![Ajout du RODC au domaine](../../../../assets/doc-technique/active-directory/ad-rodc01.png)
+
+</Steps>
+
+<Aside type="tip" title="Installation terminée">
+  Les trois contrôleurs de domaine sont désormais opérationnels. La prochaine étape consiste à configurer les **Sites et Services Active Directory** afin d'optimiser la réplication et l'authentification entre les sites de Paris et Lyon.
+</Aside>
+
+
+
+
+
+
+
+
