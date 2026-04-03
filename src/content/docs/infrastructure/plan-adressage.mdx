@@ -1,6 +1,111 @@
 ---
 title: Plan d'adressage IP
-description: Plan d'adressage réseau complet — zones WAN, LAN Paris, DMZ, Management, LAN Lyon et cloud Exoscale.
+description: Plan d'adressage réseau complet - zones WAN, LAN Paris, DMZ, Management, LAN Lyon et cloud Exoscale.
 ---
+import { Aside, Badge } from '@astrojs/starlight/components';
 
-*Contenu à venir.*
+## Principes de conception
+
+Le plan d'adressage IP de l'infrastructure FreeMotions a été conçu selon les principes de **segmentation stricte** et de **défense en profondeur**. Chaque zone réseau dispose de son propre subnet isolé, sans routage direct inter-zones tout flux doit transiter par les firewalls pfSense qui appliquent les règles de filtrage définies dans la politique de sécurité.
+
+Le choix des plages d'adressage privées respecte la RFC 1918 et évite délibérément les ranges couramment utilisés par défaut (192.168.0.0/24, 10.0.0.0/24) afin de réduire les risques de collision lors d'interconnexions futures (VPN client-to-site, partenaires, cloud).
+
+La haute disponibilité est assurée par le protocole **CARP** (Common Address Redundancy Protocol) sur chaque paire de firewalls. Une **VIP CARP** (Virtual IP) est définie par zone c'est cette adresse virtuelle qui est utilisée comme gateway par les équipements, garantissant la continuité de service en cas de bascule automatique du nœud maître vers l'esclave.
+
+<Aside type="caution" title="Note maquette Proxmox">
+  En production, les sites Paris et Lyon sont géographiquement séparés. La maquette simule les deux sites sur un hyperviseur unique **(pve3-ovh)** via des bridges distincts (vmbr).
+</Aside>
+
+## Mapping bridges Proxmox
+
+Les bridges Proxmox simulent les segments réseau physiques de l'infrastructure. Chaque bridge correspond à une zone d'isolation distincte. **Seuls les UTM (pfSense) sont autorisés sur vmbr1** toute autre VM connectée à ce bridge sera supprimée par l'administration du serveur mutualisé.
+
+| Bridge | Usage | Subnet |
+|---|---|---|
+| vmbr0 | Réservé hôte : ne jamais connecter de VM | . |
+| vmbr1 | WAN - UTM uniquement | 192.168.254.0/24 |
+| vmbr2 | LAN Paris | 10.9.75.0/24 |
+| vmbr3 | DMZ Paris | 10.9.175.0/24 |
+| vmbr4 | Management | 10.9.99.0/24 |
+| vmbr5 | LAN Lyon | 10.9.69.0/24 |
+
+## WAN : vmbr1 (192.168.254.0/24)
+
+Le segment WAN est le point d'entrée unique vers Internet. Seuls les pfSense y sont connectés. Les VIPs CARP permettent une bascule transparente entre les deux nœuds de chaque site sans reconfiguration des équipements en amont. Les adresses physiques des firewalls (.19/.29 pour Paris, .49/.59 pour Lyon) ne sont jamais exposées directement seules les VIPs sont référencées dans les règles NAT et les configurations VPN.
+
+| Rôle | Hostname | IP |
+|---|---|---|
+| VIP CARP WAN Paris | PRS-FW-VIP | 192.168.254.9 |
+| pfSense Paris 1 | PRS-FW01 | 192.168.254.19 |
+| pfSense Paris 2 | PRS-FW02 | 192.168.254.29 |
+| VIP CARP WAN Lyon | LY-FW-VIP | 192.168.254.39 |
+| pfSense Lyon 1 | LY-FW01 | 192.168.254.49 |
+| pfSense Lyon 2 | LY-FW02 | 192.168.254.59 |
+| Gateway Internet | . | 192.168.254.254 |
+
+## LAN Paris : vmbr2 (10.9.75.0/24)
+
+Zone principale hébergeant les 40 postes fixes et l'ensemble des serveurs internes. Les contrôleurs de domaine (.10 et .11) sont en adressage fixe et référencés statiquement dans la configuration DNS/DHCP ils ne doivent jamais changer d'adresse. La plage DHCP (.100–.200) est réservée aux postes utilisateurs et exclut volontairement les 99 premières adresses pour les équipements à IP fixe futurs.
+
+| Rôle | Hostname | IP |
+|---|---|---|
+| Gateway LAN VIP CARP | PRS-FW-LAN-VIP | 10.9.75.1 |
+| pfSense Paris 1 LAN | PRS-FW01 | 10.9.75.2 |
+| pfSense Paris 2 LAN | PRS-FW02 | 10.9.75.3 |
+| DC Principal | PRS-DC-01 | 10.9.75.10 |
+| DC Secondaire | PRS-DC-02 | 10.9.75.11 |
+| Serveur de fichiers | PRS-FILE-01 | 10.9.75.20 |
+| Serveur RDS | PRS-RDS-01 | 10.9.75.21 |
+| Serveur ITAM (GLPI) | PRS-ITAM-01 | 10.9.75.22 |
+| Plage DHCP postes | . | 10.9.75.100 – 200 |
+
+## DMZ Paris : vmbr3 (10.9.175.0/24)
+
+La DMZ héberge exclusivement les services exposés vers Internet. Le principe fondamental est qu'**aucun serveur de la DMZ ne peut initier une connexion vers le LAN Paris** les règles pfSense n'autorisent que les flux entrants filtrés et les réponses aux requêtes initiées depuis le LAN. Les reverse proxys HAProxy (.10 et .11) constituent le seul point d'entrée pour le trafic HTTP/HTTPS externe, masquant les serveurs web derrière eux.
+
+| Rôle | Hostname | IP |
+|---|---|---|
+| Gateway DMZ VIP CARP | PRS-FW-DMZ-VIP | 10.9.175.1 |
+| Reverse Proxy 1 | PRS-RVP-01 | 10.9.175.10 |
+| Reverse Proxy 2 | PRS-RVP-02 | 10.9.175.11 |
+| Serveur Web 1 | PRS-WEB-01 | 10.9.175.20 |
+| Serveur Web 2 | PRS-WEB-02 | 10.9.175.21 |
+| Serveur Web 3 | PRS-WEB-03 | 10.9.175.22 |
+
+## Management : vmbr4 (10.9.99.0/24)
+
+Zone d'administration strictement isolée, accessible uniquement depuis le LAN Paris via des règles pfSense dédiées. Elle héberge les outils de supervision et de détection d'intrusion. **Aucun flux utilisateur ne transite par cette zone.** L'accès aux interfaces d'administration (Zabbix, Grafana, Wazuh) est restreint aux comptes d'administration nominatifs avec authentification MFA. Tous les logs du SI convergent vers Wazuh SIEM (.12) pour corrélation et détection selon les règles MITRE ATT&CK.
+
+| Rôle | Hostname | IP |
+|---|---|---|
+| Gateway MGMT VIP CARP | PRS-FW-MGMT-VIP | 10.9.99.1 |
+| Zabbix | ADM-ZABBIX | 10.9.99.10 |
+| Grafana | ADM-GRAFANA | 10.9.99.11 |
+| Wazuh SIEM | ADM-WAZUH | 10.9.99.12 |
+
+## LAN Lyon : vmbr5 (10.9.69.0/24)
+
+Zone dédiée aux 10 collaborateurs de la succursale lyonnaise. Le RODC (Read-Only Domain Controller) assure l'authentification locale sans répliquer l'intégralité de la base AD vers Lyon seuls les comptes des utilisateurs lyonnais y sont mis en cache, limitant l'exposition en cas de compromission du site secondaire. La plage DHCP (.100–.150) est volontairement réduite, cohérente avec le nombre de postes du site.
+
+| Rôle | Hostname | IP |
+|---|---|---|
+| Gateway LAN Lyon VIP CARP | LY-FW-LAN-VIP | 10.9.69.1 |
+| pfSense Lyon 1 LAN | LY-FW01 | 10.9.69.2 |
+| pfSense Lyon 2 LAN | LY-FW02 | 10.9.69.3 |
+| DC Lyon (RODC) | LY-RODC-01 | 10.9.69.10 |
+| Plage DHCP postes Lyon | . | 10.9.69.100 – 150 |
+
+## Cloud Exoscale VPC
+
+Le VPC Exoscale constitue le troisième site de l'infrastructure, dédié aux services cloud et à la sauvegarde externalisée. Il est interconnecté à l'infrastructure on-premise via un tunnel chiffré. Le bastion SSH est le **seul point d'entrée autorisé** pour les accès d'administration à distance toute connexion SSH directe vers les serveurs internes est bloquée par les règles pfSense.
+
+| Rôle | Hostname | Adresse |
+|---|---|---|
+| Firewall cloud | EXO-FW | 10.0.0.1 (VPC privé) |
+| Bastion SSH | BASTION-SSH | IP publique Exoscale |
+| DNS public Split | SPLIT-DNS-PUB | IP publique Exoscale |
+| Bucket S3 Veeam | . | Object Storage Exoscale |
+
+<Aside type="note" title="Tunnel IPSec IKEv2">
+  Le VPN site-à-site Paris–Lyon utilise **IPSec IKEv2** opéré par les pfSense. Ce protocole a été retenu pour sa robustesse, sa résistance aux coupures réseau (MOBIKE) et sa compatibilité native avec pfSense. En maquette, le tunnel transite par vmbr1 (bridge WAN partagé sur pve3-ovh) simulant le lien Internet inter-sites.
+</Aside>

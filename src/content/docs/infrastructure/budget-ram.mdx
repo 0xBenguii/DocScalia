@@ -2,5 +2,32 @@
 title: Budget RAM Proxmox
 description: Calcul de la consommation RAM par VM dans le quota alloué de 32 à 40 Go.
 ---
+import { Aside, Badge } from '@astrojs/starlight/components';
 
-*Contenu à venir.*
+<Aside type="danger" title="Quota groupe">
+  Le quota RAM alloué par groupe est de **32 à 40 Go maximum** sur pve3-ovh. Ne pas dépasser. Éteindre les VM inutilisées.
+</Aside>
+
+## Tableau de consommation RAM
+
+| VM | Rôle | RAM allouée |
+|---|---|---|
+| PRS-FW01 | pfSense Paris 1 (WAN/LAN) | 4 Go |
+| PRS-FW02 | pfSense Paris 2 (CARP) | 2 Go |
+| LY-FW01 | pfSense Lyon 1 (WAN/LAN) | 4 Go |
+| LY-FW02 | pfSense Lyon 2 (CARP) | 2 Go |
+| PRS-DC-01 | DC Principal Paris (AD/DNS/DHCP) | 2 Go |
+| PRS-DC-02 | DC Secondaire Paris | 2 Go |
+| LY-DCRO-01 | RODC Lyon | 2 Go |
+| PRS-FILE-01 | Serveur de fichiers | 2 Go |
+| PRS-RDS-01 | Serveur RDS RemoteApp | 2 Go |
+| PRS-ITAM-01 | GLPI | 2 Go |
+| PRS-RVP-01 | Reverse Proxy HAProxy 1 | 1 Go |
+| PRS-RVP-02 | Reverse Proxy HAProxy 2 | 1 Go |
+| PRS-WEB-01 | Serveur Web 1 | 1 Go |
+| PRS-WEB-02 | Serveur Web 2 | 1 Go |
+| PRS-WEB-03 | Serveur Web 3 | 1 Go |
+| ADM-ZABBIX | Supervision Zabbix | 2 Go |
+| ADM-GRAFANA | Dashboards Grafana | 1 Go |
+| ADM-WAZUH | SIEM Wazuh | 2 Go |
+| **TOTAL** | | **36 Go** |
