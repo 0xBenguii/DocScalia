@@ -55,6 +55,7 @@ export default defineConfig({
                 { label: 'Active Directory', slug: 'doc-technique/active-directory/doc-active-directory' },
                 { label: 'Sites et Services Active Directory', slug: 'doc-technique/active-directory/doc-site-services-ad' },
                 { label: 'Réplication des mots de passe (PRP)', slug: 'doc-technique/active-directory/doc-replication-mdp-prp' },
+                { label: 'GPO', slug: 'doc-technique/active-directory/doc-gpo' },
               ],
             },
           ],

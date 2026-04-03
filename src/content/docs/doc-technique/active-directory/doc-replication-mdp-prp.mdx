@@ -84,7 +84,8 @@ puis leur déclaration dans la PRP depuis `PRS-DC-01`.
 
 6. Créer le groupe `GDL-RODC-Lyon-Refusés` et ajouter `GG-Admins-Domaine`
    ainsi que les comptes de service et comptes à privilèges élevés
-   
+
+   ![Création du lien inter-site](../../../../assets/doc-technique/active-directory/ad-rodc-prp-grp-adlp.png)
 </Steps>
 
 #### Phase 2 — Déclaration des groupes dans la PRP
@@ -101,12 +102,19 @@ puis leur déclaration dans la PRP depuis `PRS-DC-01`.
 5. Cliquer sur **"Ajouter"** → **"Refuser la réplication des mots de passe du compte"**
 
 6. Ajouter le groupe `GDL-RODC-Lyon-Refusés`
+![Création du lien inter-site](../../../../assets/doc-technique/active-directory/ad-rodc-prp-grp.png)
+
 </Steps>
 
-{/*![Configuration de la PRP](./assets/ad-rodc-prp.png)*/}
+La mise en place de la **Password Replication Policy** sur le RODC de Lyon constitue un élément
+fondamental de la sécurisation du site distant. En combinant une PRP restrictive avec une
+structuration **AGDLP** des groupes, l'infrastructure garantit que seuls les comptes strictement
+nécessaires au fonctionnement du site sont mis en cache localement.
 
-<Aside type="note" title="Mise en cache à la demande">
-  Le mot de passe d'un compte autorisé n'est mis en cache sur le RODC qu'après une **première
-  authentification** réussie via ce RODC. Tant que le mot de passe n'est pas en cache, le RODC
-  transmet la demande à un DC de Paris.
-</Aside>
+En cas de compromission physique du RODC, le rayon d'impact reste ainsi limité aux seuls comptes
+des utilisateurs et ordinateurs lyonnais, préservant l'intégrité des comptes privilégiés et
+sensibles hébergés sur `PRS-DC-01` à Paris.
+
+Cette configuration devra être maintenue à jour lors de toute évolution de l'organisation :
+arrivée de nouveaux utilisateurs, création de comptes de service, ou modification des périmètres
+d'administration.
