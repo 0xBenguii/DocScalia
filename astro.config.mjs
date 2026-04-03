@@ -48,8 +48,15 @@ export default defineConfig({
         {
           label: 'Documentations Technique',
           items: [
-            { label: 'Index', slug: 'doc-technique' },
-            { label: 'Active Directory', slug: 'doc-technique/active-directory' },
+            { label: 'Introduction', slug: 'doc-technique' },
+            { 
+              label: 'Active Directory',
+              items: [
+                { label: 'Active Directory', slug: 'doc-technique/active-directory/doc-active-directory' },
+                { label: 'Sites et Services Active Directory', slug: 'doc-technique/active-directory/doc-site-services-ad' },
+                { label: 'Stratégie de réplication des mots de passe (PRP)', slug: 'doc-technique/active-directory/doc-replication-mdp-prp' },
+              ],
+            },
           ],
         },
       ],
