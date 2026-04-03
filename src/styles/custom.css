@@ -1,117 +1,340 @@
 /* ===========================
+
    SCALIA THEME - Custom CSS
+
    Rouge Scalia + Dark Mode moderne
+
    =========================== */
 
+
+
 /* ---------- Dark theme (default) ---------- */
+
 :root {
+
   --sl-color-accent-low: hsl(1, 50%, 15%);
+
   --sl-color-accent: hsl(1, 78%, 55%);
+
   --sl-color-accent-high: hsl(1, 85%, 85%);
+
   --sl-color-white: hsl(0, 0%, 100%);
+
   --sl-color-black: hsl(0, 0%, 8%);
+
   --sl-color-gray-1: hsl(0, 0%, 93%);
+
   --sl-color-gray-2: hsl(0, 0%, 80%);
+
   --sl-color-gray-3: hsl(0, 0%, 64%);
+
   --sl-color-gray-4: hsl(0, 0%, 39%);
+
   --sl-color-gray-5: hsl(0, 0%, 20%);
+
   --sl-color-gray-6: hsl(0, 0%, 13%);
+
   --sl-font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+
+  --sl-sidebar-width: 270px;
+
 }
+
+
 
 /* ---------- Light theme ---------- */
+
 :root[data-theme='light'] {
+
   --sl-color-accent-low: hsl(1, 80%, 92%);
+
   --sl-color-accent: hsl(1, 78%, 48%);
+
   --sl-color-accent-high: hsl(1, 70%, 20%);
+
   --sl-color-gray-1: hsl(0, 0%, 18%);
+
   --sl-color-gray-2: hsl(0, 0%, 28%);
+
   --sl-color-gray-3: hsl(0, 0%, 43%);
+
   --sl-color-gray-4: hsl(0, 0%, 56%);
+
   --sl-color-gray-5: hsl(0, 0%, 80%);
+
   --sl-color-gray-6: hsl(0, 0%, 93%);
+
   --sl-color-gray-7: hsl(0, 0%, 98%);
+
   --sl-color-black: hsl(0, 0%, 100%);
+
   --sl-color-white: hsl(0, 0%, 8%);
+
 }
+
+
 
 /* ---------- Hero section ---------- */
+
 .hero {
+
   padding-block: 3rem !important;
+
 }
+
 .hero .tagline {
+
   font-size: var(--sl-text-xl) !important;
+
   opacity: 0.85;
+
 }
+
+
 
 /* ---------- Sidebar ---------- */
+
 nav.sidebar {
+
   border-inline-end: 1px solid var(--sl-color-hairline);
+
 }
+
+
+nav.sidebar a {
+
+  color: var(--sl-color-gray-2) !important;
+
+  transition: color 0.15s ease;
+
+}
+
+nav.sidebar a:hover {
+
+  color: var(--sl-color-accent) !important;
+
+}
+
+
 nav.sidebar a[aria-current='page'] {
+
   background: var(--sl-color-accent-low);
+
   border-inline-start: 3px solid var(--sl-color-accent);
+
   font-weight: 600;
+
+  color: var(--sl-color-accent-high) !important;
+
 }
+
+
+nav.sidebar .top-level > li > details > summary,
+
+nav.sidebar .top-level > li > a {
+
+  color: var(--sl-color-white) !important;
+
+  font-weight: 600;
+
+}
+
+
 
 /* ---------- Cards ---------- */
+
 .card {
+
   transition: box-shadow 0.2s ease, border-color 0.2s ease;
+
   border: 1px solid var(--sl-color-hairline);
+
   border-radius: 0.75rem;
-}
-.card:hover {
-  box-shadow: 0 4px 12px rgba(229, 57, 53, 0.12);
-  border-color: var(--sl-color-accent);
+
 }
 
-/* ---------- Aside — couleurs distinctes par type ---------- */
+.card:hover {
+
+  box-shadow: 0 4px 12px rgba(229, 57, 53, 0.12);
+
+  border-color: var(--sl-color-accent);
+
+}
+
+
+
+/* ==========================================
+
+   Aside — DARK MODE (default)
+
+   Backgrounds plus clairs, texte lisible
+
+   ========================================== */
+
 .starlight-aside--note {
+
   border-color: hsl(210, 70%, 50%) !important;
-  background: hsl(210, 70%, 10%) !important;
+
+  background: hsl(210, 50%, 15%) !important;
+
+  color: hsl(210, 30%, 85%) !important;
+
 }
+
 .starlight-aside--note svg {
-  color: hsl(210, 70%, 60%) !important;
+
+  color: hsl(210, 70%, 65%) !important;
+
 }
+
+.starlight-aside--note .starlight-aside__title {
+
+  color: hsl(210, 70%, 65%) !important;
+
+}
+
+
 
 .starlight-aside--tip {
+
   border-color: hsl(150, 60%, 40%) !important;
-  background: hsl(150, 60%, 8%) !important;
+
+  background: hsl(150, 40%, 14%) !important;
+
+  color: hsl(150, 25%, 85%) !important;
+
 }
+
 .starlight-aside--tip svg {
-  color: hsl(150, 60%, 50%) !important;
-}
 
-.starlight-aside--caution {
-  border-color: hsl(40, 90%, 50%) !important;
-  background: hsl(40, 90%, 8%) !important;
-}
-.starlight-aside--caution svg {
-  color: hsl(40, 90%, 55%) !important;
-}
+  color: hsl(150, 60%, 55%) !important;
 
-.starlight-aside--danger {
-  border-color: var(--sl-color-accent) !important;
-  background: var(--sl-color-accent-low) !important;
-}
-.starlight-aside--danger svg {
-  color: var(--sl-color-accent) !important;
-}
-
-/* ---------- Aside — titres couleur cohérente ---------- */
-.starlight-aside--note .starlight-aside__title {
-  color: hsl(210, 70%, 60%) !important;
 }
 
 .starlight-aside--tip .starlight-aside__title {
-  color: hsl(150, 60%, 50%) !important;
+
+  color: hsl(150, 60%, 55%) !important;
+
+}
+
+
+
+.starlight-aside--caution {
+
+  border-color: hsl(40, 90%, 50%) !important;
+
+  background: hsl(40, 50%, 14%) !important;
+
+  color: hsl(40, 40%, 85%) !important;
+
+}
+
+.starlight-aside--caution svg {
+
+  color: hsl(40, 90%, 58%) !important;
+
 }
 
 .starlight-aside--caution .starlight-aside__title {
-  color: hsl(40, 90%, 55%) !important;
+
+  color: hsl(40, 90%, 58%) !important;
+
+}
+
+
+
+.starlight-aside--danger {
+
+  border-color: var(--sl-color-accent) !important;
+
+  background: hsl(1, 50%, 15%) !important;
+
+  color: hsl(1, 30%, 85%) !important;
+
+}
+
+.starlight-aside--danger svg {
+
+  color: var(--sl-color-accent) !important;
+
 }
 
 .starlight-aside--danger .starlight-aside__title {
+
+  color: var(--sl-color-accent) !important;
+
+}
+
+
+
+/* ==========================================
+
+   Aside — LIGHT MODE
+
+   Backgrounds doux pastels, texte sombre
+
+   ========================================== */
+
+:root[data-theme='light'] .starlight-aside--note {
+
+  border-color: hsl(210, 70%, 50%) !important;
+
+  background: hsl(210, 60%, 94%) !important;
+
+  color: hsl(210, 50%, 20%) !important;
+
+}
+
+:root[data-theme='light'] .starlight-aside--note svg {
+
+  color: hsl(210, 70%, 45%) !important;
+
+}
+
+:root[data-theme='light'] .starlight-aside--note .starlight-aside__title {
+
+  color: hsl(210, 70%, 40%) !important;
+
+}
+
+
+
+:root[data-theme='light'] .starlight-aside--tip {
+
+  border-color: hsl(150, 60%, 35%) !important;
+
+  background: hsl(150, 50%, 93%) !important;
+
+  color: hsl(150, 50%, 15%) !important;
+
+}
+
+:root[data-theme='light'] .starlight-aside--tip svg {
+  color: hsl(150, 60%, 32%) !important;
+}
+:root[data-theme='light'] .starlight-aside--tip .starlight-aside__title {
+  color: hsl(150, 60%, 30%) !important;
+}
+:root[data-theme='light'] .starlight-aside--caution {
+  border-color: hsl(40, 80%, 45%) !important;
+  background: hsl(40, 80%, 93%) !important;
+  color: hsl(40, 60%, 18%) !important;
+}
+:root[data-theme='light'] .starlight-aside--caution svg {
+  color: hsl(40, 80%, 40%) !important;
+}
+:root[data-theme='light'] .starlight-aside--caution .starlight-aside__title {
+  color: hsl(40, 80%, 38%) !important;
+}
+:root[data-theme='light'] .starlight-aside--danger {
+  border-color: var(--sl-color-accent) !important;
+  background: hsl(1, 70%, 95%) !important;
+  color: hsl(1, 60%, 22%) !important;
+}
+:root[data-theme='light'] .starlight-aside--danger svg {
+  color: var(--sl-color-accent) !important;
+}
+:root[data-theme='light'] .starlight-aside--danger .starlight-aside__title {
   color: var(--sl-color-accent) !important;
 }
 
