@@ -2,7 +2,7 @@
 title: Active Directory
 description: Vue d'ensemble de mis en place de l'Active Directory pour le projet Scalia - FreeMotions.
 ---
-import { Steps, Badge, Aside, Card, CardGrid, StarlightIcon } from '@astrojs/starlight/components';
+import {LinkButton, Steps, Badge, Aside, Card, CardGrid, StarlightIcon } from '@astrojs/starlight/components';
 
 ## Introduction
 
@@ -43,7 +43,7 @@ Le choix d'un **RODC** *(Read-Only Domain Controller)* pour le site de Lyon est 
 
 ### Topologie réseau
 
-- **Lien inter-site** : *à compléter*
+- **Lien inter-site** :  
 
 <Aside type="note" title="Interconnexion des sites">
   Les deux sites sont interconnectés via un lien WAN. Le site de Lyon (**LY-RODC-01**) ne dispose pas de sécurité physique fiable, ce qui justifie l'utilisation d'un contrôleur en lecture seule.
@@ -57,18 +57,7 @@ Le choix d'un **RODC** *(Read-Only Domain Controller)* pour le site de Lyon est 
 | **PRS-DC-02**    | Paris | `10.9.75.0/24`  |
 | **LY-RODC-01**   | Lyon  | `10.9.69.0/24`  |
 
-### Stratégie de réplication Active Directory
 
-<Card title="Réplication Intra-site (Paris)"  icon="approve-check-circle">
-Sur le site de Paris entre **PRS-DC-01** et **PRS-DC-02**
-    - Communication directe entre les deux contrôleurs de domaine
-    - Objectif : haute disponibilité et synchronisation rapide
-</Card>
-
-<Card title="Réplication Inter-site (Paris → Lyon)"  icon="approve-check-circle">
-**Réplication unidirectionnelle** de PRS-DC-01 et PRS-DC-02 vers **LY-RODC-01**
-    - Planification pour limiter la bande passante & contrôler les échanges
-</Card>
 
 ## Prérequis
 
@@ -103,7 +92,7 @@ Les rôles suivants doivent être installés sur chaque contrôleur de domaine :
 
 L'installation s'effectue via le **Gestionnaire de serveur** :
 
-![Gestionnaire de serveur](../../../assets/doc-technique/active-directory/ad-gestionnaire-srv.png)
+![Gestionnaire de serveur](../../../../assets/doc-technique/active-directory/ad-gestionnaire-srv.png)
 <Steps>
 1. Cliquer sur **"Ajouter des rôles et des fonctionnalités"**
 2. Sélectionner **"Installation basée sur un rôle ou une fonctionnalité"**
@@ -111,14 +100,14 @@ L'installation s'effectue via le **Gestionnaire de serveur** :
 4. Cocher **"Services AD DS"**
 </Steps>
 
-![Rôle AD DS](../../../assets/doc-technique/active-directory/ad-selection-role-adds.png)
+![Rôle AD DS](../../../../assets/doc-technique/active-directory/ad-selection-role-adds.png)
 
 <Steps>
 5. Cliquer sur **"Ajouter des fonctionnalités"** lorsque demandé
 6. Cliquer sur **"Installer"**
 </Steps>
 
-![Installation du rôle AD DS](../../../assets/doc-technique/active-directory/ad-install-role.png)
+![Installation du rôle AD DS](../../../../assets/doc-technique/active-directory/ad-install-role.png)
 
 ## Promotion en contrôleur de domaine
 
@@ -126,19 +115,19 @@ L'installation s'effectue via le **Gestionnaire de serveur** :
 <Steps>
 
 1. Cliquer sur **"Promouvoir ce serveur en contrôleur de domaine"**
-![Promotion AD DS](../../../assets/doc-technique/active-directory/ad-promotion-dc.png)
+![Promotion AD DS](../../../../assets/doc-technique/active-directory/ad-promotion-dc.png)
 
 2. Sélectionner **"Ajouter une nouvelle forêt"**
 3. Renseigner le nom de domaine racine : `freemotion.fr`
-![Configuration de la nouvelle forêt](../../../assets/doc-technique/active-directory/ad-dc01-nouvelle-foret.png)
+![Configuration de la nouvelle forêt](../../../../assets/doc-technique/active-directory/ad-dc01-nouvelle-foret.png)
 
 4. Définir le **niveau fonctionnel** de la forêt et du domaine
 5. Cocher **"Serveur DNS"**
 6. Définir le mot de passe **DSRM** *(Directory Services Restore Mode)*
-![Configuration du mot de passe DSRM](../../../assets/doc-technique/active-directory/ad-dc01-mdp-dsrm.png)
+![Configuration du mot de passe DSRM](../../../../assets/doc-technique/active-directory/ad-dc01-mdp-dsrm.png)
 
 7. Dans l'écran **"Chemins d'accès"**, modifier les chemins par défaut :
-![Configuration du chemins des dossiers SYSVOL et NTDS](../../../assets/doc-technique/active-directory/ad-dc01-dossier-sysvol-ntds.png)
+![Configuration du chemins des dossiers SYSVOL et NTDS](../../../../assets/doc-technique/active-directory/ad-dc01-dossier-sysvol-ntds.png)
 
 </Steps>
 <Aside type="tip" title="Déplacement des dossiers NTDS et SYSVOL">
@@ -153,7 +142,7 @@ L'installation s'effectue via le **Gestionnaire de serveur** :
 8. Vérifier le résumé puis cliquer sur **"Installer"**
 </Steps>
 
-![DC01S](../../../assets/doc-technique/active-directory/ad-dc01.png)
+![DC01S](../../../../assets/doc-technique/active-directory/ad-dc01.png)
 
 Le serveur **PRS-DC-01** a été promu en tant que premier contrôleur de domaine, créant ainsi la forêt et le domaine freemotion.fr`. 
 
@@ -173,7 +162,7 @@ Avant la promotion, le serveur doit rejoindre le domaine `freemotion.fr` :
 3. Cliquer sur **"Modifier"**
 4. Sélectionner **"Domaine"** et renseigner `freemotion.fr`
 5. Fournir les **informations d'identification** d'un administrateur du domaine
-![Intégration au domaine](../../../assets/doc-technique/active-directory/ad-dc02-integration-domaine.png)
+![Intégration au domaine](../../../../assets/doc-technique/active-directory/ad-dc02-integration-domaine.png)
 
 6. Redémarrer le serveur
 
@@ -186,29 +175,29 @@ L'installation s'effectue via le **Gestionnaire de serveur** :
 
 <Steps>
 1. Cliquer sur **"Promouvoir ce serveur en contrôleur de domaine"**
-![Promotion AD DS](../../../assets/doc-technique/active-directory/ad-promotion-dc.png)
+![Promotion AD DS](../../../../assets/doc-technique/active-directory/ad-promotion-dc.png)
 
 2. Sélectionner **"Ajouter un contrôleur de domaine à un domaine existant"**
 
 3. Renseigner le domaine : `freemotion.fr`
-![Ajout du DC secondaire au domaine](../../../assets/doc-technique/active-directory/ad-dc02-domaine.png)
+![Ajout du DC secondaire au domaine](../../../../assets/doc-technique/active-directory/ad-dc02-domaine.png)
 
 4. Fournir les **informations d'identification** d'un administrateur du domaine
-![Ajout du DC secondaire au domaine](../../../assets/doc-technique/active-directory/ad-dc02-domaine2.png)
+![Ajout du DC secondaire au domaine](../../../../assets/doc-technique/active-directory/ad-dc02-domaine2.png)
 
 5. Cocher **"Serveur DNS"** et **"Catalogue global (GC)"**
 
 6. Définir le mot de passe **DSRM** *(Directory Services Restore Mode)*
-![Ajout du DC secondaire au domaine](../../../assets/doc-technique/active-directory/ad-dc02-mdp-dsrm.png)
+![Ajout du DC secondaire au domaine](../../../../assets/doc-technique/active-directory/ad-dc02-mdp-dsrm.png)
 
 7. Laisser la **réplication** s'effectuer depuis `PRS-DC-01`
-![Ajout du DC secondaire au domaine](../../../assets/doc-technique/active-directory/ad-dc02-replication-dc01.png)
+![Ajout du DC secondaire au domaine](../../../../assets/doc-technique/active-directory/ad-dc02-replication-dc01.png)
 
 8. Dans l'écran **"Chemins d'accès"**, modifier les chemins par défaut :
-![Ajout du DC secondaire au domaine](../../../assets/doc-technique/active-directory/ad-dc02-dossier-sysvol-ntds.png)
+![Ajout du DC secondaire au domaine](../../../../assets/doc-technique/active-directory/ad-dc02-dossier-sysvol-ntds.png)
 
 9. Vérifier le résumé puis cliquer sur **"Installer"**
-![Ajout du DC secondaire au domaine](../../../assets/doc-technique/active-directory/ad-dc02.png)
+![Ajout du DC secondaire au domaine](../../../../assets/doc-technique/active-directory/ad-dc02.png)
 
 </Steps>
 
@@ -232,10 +221,10 @@ Avant la promotion, le serveur doit rejoindre le domaine `freemotion.fr` :
 3. Cliquer sur **"Modifier"**
 
 4. Sélectionner **"Domaine"** et renseigner `freemotion.fr`
-![Pré-création du compte RODC](../../../assets/doc-technique/active-directory/ad-rodc01-integration-domaine.png)
+![Pré-création du compte RODC](../../../../assets/doc-technique/active-directory/ad-rodc01-integration-domaine.png)
 
 5. Fournir les **informations d'identification** d'un administrateur du domaine
-![Pré-création du compte RODC](../../../assets/doc-technique/active-directory/ad-rodc01-integration-domaine2.png)
+![Pré-création du compte RODC](../../../../assets/doc-technique/active-directory/ad-rodc01-integration-domaine2.png)
 
 6. Redémarrer le serveur
 </Steps>
@@ -245,32 +234,32 @@ Avant la promotion, le serveur doit rejoindre le domaine `freemotion.fr` :
 <Steps>
 
 1. Cliquer sur **"Promouvoir ce serveur en contrôleur de domaine"**
-![Ajout du RODC au domaine](../../../assets/doc-technique/active-directory/ad-promotion-dc.png)
+![Ajout du RODC au domaine](../../../../assets/doc-technique/active-directory/ad-promotion-dc.png)
 
 2. Sélectionner **"Ajouter un contrôleur de domaine à un domaine existant"**
 
 3. Renseigner le domaine : `freemotion.fr`
-![Ajout du RODC au domaine](../../../assets/doc-technique/active-directory/ad-rodc01-domaine.png)
+![Ajout du RODC au domaine](../../../../assets/doc-technique/active-directory/ad-rodc01-domaine.png)
 4. Fournir les **informations d'identification** d'un administrateur du domaine
-![Ajout du RODC au domaine](../../../assets/doc-technique/active-directory/ad-rodc01-domaine2.png)
+![Ajout du RODC au domaine](../../../../assets/doc-technique/active-directory/ad-rodc01-domaine2.png)
 
 5. Cocher **"Contrôleur de domaine en lecture seule (RODC)"** et **"Serveur DNS"**
 
 6. Définir le mot de passe **DSRM** *(Directory Services Restore Mode)*
-![Ajout du RODC au domaine](../../../assets/doc-technique/active-directory/ad-rodc01-mdp-dsrm.png)
+![Ajout du RODC au domaine](../../../../assets/doc-technique/active-directory/ad-rodc01-mdp-dsrm.png)
 
 7. Laisser la **Stratégie de réplication des mots de passe (PRP)** par défaut
-![Ajout du RODC au domaine](../../../assets/doc-technique/active-directory/ad-rodc01-prp-default.png)
+![Ajout du RODC au domaine](../../../../assets/doc-technique/active-directory/ad-rodc01-prp-default.png)
 
     <Aside type="note" title="Configuration de la PRP">
      La PRP sera configurée dans une étape dédiée, après la mise en place des Sites et Services AD. Voir la section [Stratégie de réplication des mots de passe (PRP)](#stratégie-de-réplication-des-mots-de-passe-prp).
     </Aside>
 
 8. Dans l'écran **"Chemins d'accès"**, modifier les chemins par défaut :
-![Ajout du RODC au domaine](../../../assets/doc-technique/active-directory/ad-rodc01-dossier-sysvol-ntds.png)
+![Ajout du RODC au domaine](../../../../assets/doc-technique/active-directory/ad-rodc01-dossier-sysvol-ntds.png)
 
 9. Vérifier le résumé puis cliquer sur **"Installer"**
-![Ajout du RODC au domaine](../../../assets/doc-technique/active-directory/ad-rodc01.png)
+![Ajout du RODC au domaine](../../../../assets/doc-technique/active-directory/ad-rodc01.png)
 
 </Steps>
 
@@ -278,72 +267,10 @@ Avant la promotion, le serveur doit rejoindre le domaine `freemotion.fr` :
   Les trois contrôleurs de domaine sont désormais opérationnels. La prochaine étape consiste à configurer les **Sites et Services Active Directory** afin d'optimiser la réplication et l'authentification entre les sites de Paris et Lyon.
 </Aside>
 
-## Sites et Service Active Directory
-
-Les **Sites et Services AD** permettent de définir la topologie physique du réseau afin d'optimiser la réplication entre les contrôleurs de domaine et l'authentification des utilisateurs.
-
-### Création des sites
-
-La configuration s'effectue via **"Sites et Services Active Directory"** sur `PRS-DC-01` :
-![Sites et Services Active Directory](../../../assets/doc-technique/active-directory/ad-site-services-ad.png)
-
-#### Renommer le site par défaut
-
-<Steps>
-1. Faire un clic droit sur **"Default-First-Site-Name"**
-
-2. Sélectionner **"Renommer"**
-![Renommage du site par défaut](../../../assets/doc-technique/active-directory/ad-site-rename.png)
-    
-3. Renseigner le nom : `Paris`
-![Site Paris](../../../assets/doc-technique/active-directory/ad-site-paris.png)
-</Steps>
-
-#### Créer le site Lyon
-
-<Steps>
-1. Faire un clic droit sur **"Sites"**
-
-2. Sélectionner **"Nouveau site"**
-![Nouveau site](../../../assets/doc-technique/active-directory/ad-site-nouveau-site.png)
-
-3. Renseigner le nom : `Lyon`
-
-4. Sélectionner le lien de site : `DEFAULTIPSITELINK`
-![Nouveau site Lyon](../../../assets/doc-technique/active-directory/ad-site-lyon.png)
-5. Valider
-
-</Steps>
-
-### Création des sous-réseaux
-
-Les sous-réseaux permettent d'associer automatiquement les machines au bon site AD :
-
-<Steps>
-1. Faire un clic droit sur **"Subnets"**
-2. Sélectionner **"Nouveau sous-réseau"**
-![Création des sous-réseaux](../../../assets/doc-technique/active-directory/ad-site-creation-subnets.png)
-
-3. Renseigner le sous-réseau et associer au site correspondant
-</Steps>
-<CardGrid>
-  <Card title="Paris"  icon="seti:config">
-  `10.9.75.0/24`
-  </Card>
-  <Card title="Lyon"  icon="seti:config">
-    `10.9.69.0/24`
-  </Card>
-</CardGrid>
-
-![Création des sous-réseaux](../../../assets/doc-technique/active-directory/ad-site-creation-subnets2.png)
-
-
-
-
-### Création du lien inter-site
 
 
 
 
 
-## Stratégie de réplication des mots de passe (PRP)
+
+
