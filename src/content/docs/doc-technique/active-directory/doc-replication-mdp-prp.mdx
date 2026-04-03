@@ -1,9 +1,120 @@
 ---
-title: Stratégie de réplication des mots de passe (PRP)
+title: Réplication des mots de passe (PRP)
 description: Vue d'ensemble de mis en place de la Stratégie de réplication des mots de passe (PRP) pour le projet Scalia - FreeMotions.
+pagefind: false
 ---
 import {LinkButton, Steps, Badge, Aside, Card, CardGrid, StarlightIcon } from '@astrojs/starlight/components';
 
+## Introduction
 
+Dans le cadre du déploiement du contrôleur de domaine en lecture seule (RODC) sur le site de Lyon,
+la mise en place d'une **Stratégie de réplication des mots de passe (Password Replication Policy — PRP)**
+constitue un prérequis de sécurité essentiel.
+
+Contrairement à un contrôleur de domaine standard, le RODC ne stocke pas l'intégralité de la base
+Active Directory. La PRP permet de définir avec précision quels comptes sont autorisés à avoir leur
+mot de passe mis en cache localement sur le RODC, et lesquels en sont explicitement exclus.
+
+Cette granularité est déterminante en matière de gestion des risques : en cas de compromission
+physique du RODC — scénario particulièrement à considérer pour un site distant comme Lyon — seuls
+les mots de passe effectivement mis en cache seraient exposés. Les comptes sensibles, privilégiés
+et de service doivent donc être systématiquement exclus de cette réplication.
+
+La présente section détaille la configuration recommandée de la PRP, incluant la création des
+groupes de sécurité dédiés, la définition de leurs membres, ainsi que les étapes de paramétrage
+depuis le contrôleur de domaine principal `PRS-DC-01`.
 
 ## Stratégie de réplication des mots de passe (PRP)
+
+La **Password Replication Policy (PRP)** contrôle quels comptes peuvent avoir leur mot de passe
+mis en cache sur le RODC. En cas de compromission physique du RODC à Lyon, seuls les mots de
+passe mis en cache sont exposés.
+
+### Création des groupes
+
+Avant de configurer la PRP, créer les groupes suivants sur `PRS-DC-01` selon la convention **AGDLP** :
+
+| Groupe                       | Type             | Rôle                                                         |
+|------------------------------|------------------|--------------------------------------------------------------|
+| `GDL-RODC-Lyon-Autorisés`    | **Domain Local** | autorise la mise en cache               |
+| `GDL-RODC-Lyon-Refusés`      | **Domain Local** | refuse la mise en cache                 |
+| `GG-Users-Lyon`              | Global           | contient les utilisateurs du site de Lyon     |
+| `GG-Computers-Lyon`          | Global           | contient les ordinateurs du site de Lyon      |
+| `GG-Admins-Domaine`          | Global           | contient les administrateurs du domains         |
+
+### Membres des groupes créés
+
+#### Groupe autorisé dans la PRP — `GDL-RODC-Lyon-Autorisés`
+
+- `GG-Users-Lyon` — Comptes utilisateurs du site de Lyon
+- `GG-Computers-Lyon` — Comptes ordinateurs du site de Lyon
+
+#### Groupe refusé dans la PRP — `GDL-RODC-Lyon-Refusés`
+
+- `GG-Admins-Domaine` — Comptes **Administrateurs du domaine**
+- Comptes **Administrateurs de l'entreprise**
+- Comptes de **service**
+- Comptes **sensibles** ou à **privilèges élevés**
+
+<Aside type="caution" title="Comptes refusés par défaut">
+  Les groupes suivants sont refusés par défaut par Windows et ne doivent pas être retirés de la liste :
+  - `Denied RODC Password Replication Group`
+  - `Domain Admins`
+  - `Enterprise Admins`
+  - `Schema Admins`
+</Aside>
+
+### Configuration de la PRP
+
+La configuration s'effectue en deux phases : d'abord la constitution des groupes AGDLP,
+puis leur déclaration dans la PRP depuis `PRS-DC-01`.
+
+#### Phase 1 — Constitution des groupes AGDLP
+
+<Steps>
+1. Ouvrir **"Utilisateurs et ordinateurs Active Directory"** sur **`PRS-DC-01`**
+
+2. Créer le groupe `GG-Users-Lyon` et ajouter les comptes utilisateurs du site de Lyon
+
+3. Créer le groupe `GG-Computers-Lyon` et ajouter les comptes ordinateurs du site de Lyon
+
+4. Créer le groupe `GG-Admins-Domaine` et ajouter les comptes administrateurs du domaine
+
+5. Créer le groupe `GDL-RODC-Lyon-Autorisés` et ajouter `GG-Users-Lyon` et `GG-Computers-Lyon`
+
+6. Créer le groupe `GDL-RODC-Lyon-Refusés` et ajouter `GG-Admins-Domaine`
+   ainsi que les comptes de service et comptes à privilèges élevés
+
+   ![Création du lien inter-site](../../../../assets/doc-technique/active-directory/ad-rodc-prp-grp-adlp.png)
+</Steps>
+
+#### Phase 2 — Déclaration des groupes dans la PRP
+
+<Steps>
+1. Faire un clic droit sur **`LY-DCRO-01`** → **"Propriétés"**
+
+2. Aller dans l'onglet **"Stratégie de réplication des mots de passe"**
+
+3. Cliquer sur **"Ajouter"** → **"Autoriser les mots de passe du compte à se répliquer"**
+
+4. Ajouter le groupe `GDL-RODC-Lyon-Autorisés`
+
+5. Cliquer sur **"Ajouter"** → **"Refuser la réplication des mots de passe du compte"**
+
+6. Ajouter le groupe `GDL-RODC-Lyon-Refusés`
+![Création du lien inter-site](../../../../assets/doc-technique/active-directory/ad-rodc-prp-grp.png)
+
+</Steps>
+
+La mise en place de la **Password Replication Policy** sur le RODC de Lyon constitue un élément
+fondamental de la sécurisation du site distant. En combinant une PRP restrictive avec une
+structuration **AGDLP** des groupes, l'infrastructure garantit que seuls les comptes strictement
+nécessaires au fonctionnement du site sont mis en cache localement.
+
+En cas de compromission physique du RODC, le rayon d'impact reste ainsi limité aux seuls comptes
+des utilisateurs et ordinateurs lyonnais, préservant l'intégrité des comptes privilégiés et
+sensibles hébergés sur `PRS-DC-01` à Paris.
+
+Cette configuration devra être maintenue à jour lors de toute évolution de l'organisation :
+arrivée de nouveaux utilisateurs, création de comptes de service, ou modification des périmètres
+d'administration.
