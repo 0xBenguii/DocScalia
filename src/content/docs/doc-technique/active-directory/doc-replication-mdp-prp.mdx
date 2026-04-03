@@ -16,11 +16,10 @@ Active Directory. La PRP permet de définir avec précision quels comptes sont a
 mot de passe mis en cache localement sur le RODC, et lesquels en sont explicitement exclus.
 
 Cette granularité est déterminante en matière de gestion des risques : en cas de compromission
-physique du RODC — scénario particulièrement à considérer pour un site distant comme Lyon — seuls
-les mots de passe effectivement mis en cache seraient exposés. Les comptes sensibles, privilégiés
+physique du RODC seuls les mots de passe effectivement mis en cache seraient exposés. Les comptes sensibles, privilégiés
 et de service doivent donc être systématiquement exclus de cette réplication.
 
-La présente section détaille la configuration recommandée de la PRP, incluant la création des
+Cette section détaille la configuration de la PRP, incluant la création des
 groupes de sécurité dédiés, la définition de leurs membres, ainsi que les étapes de paramétrage
 depuis le contrôleur de domaine principal `PRS-DC-01`.
 
