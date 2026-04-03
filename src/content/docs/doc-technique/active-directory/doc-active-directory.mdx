@@ -10,7 +10,7 @@ Dans le cadre du projet de refonte du système d'information de l'entreprise **F
 
 L'architecture retenue repose sur :
 
-- Deux **contrôleurs de domaine (DC)** situés à **Paris**
+- Deux **contrôleurs de domaine (DC)** situés à **Paris**Lyon
 - Un **contrôleur de domaine en lecture seule (RODC)** situé à **Lyon**
 
 Cette organisation permet :
@@ -51,11 +51,11 @@ Le choix d'un **RODC** *(Read-Only Domain Controller)* pour le site de Lyon est 
 
 ### Adressage réseau
 
-| Serveur          | Site  | Réseau LAN      |
-|------------------|-------|-----------------|
-| **PRS-DC-01**    | Paris | `10.9.75.0/24`  |
-| **PRS-DC-02**    | Paris | `10.9.75.0/24`  |
-| **LY-RODC-01**   | Lyon  | `10.9.69.0/24`  |
+| Serveur          | Site  | IP               | Réseau LAN      |
+|------------------|-------|------------------|-----------------|
+| **PRS-DC-01**    | Paris | `10.9.75.10/24`  |LAN Paris `10.9.75.0/24`   |
+| **PRS-DC-02**    | Paris | `10.9.75.11/24`  |LAN Paris `10.9.75.0/24`   |
+| **LY-RODC-01**   | Lyon  | `10.9.69.10/24`  |LAN Lyon `10.9.69.0/24`   |
 
 
 
@@ -252,7 +252,7 @@ Avant la promotion, le serveur doit rejoindre le domaine `freemotion.fr` :
 ![Ajout du RODC au domaine](../../../../assets/doc-technique/active-directory/ad-rodc01-prp-default.png)
 
     <Aside type="note" title="Configuration de la PRP">
-     La PRP sera configurée dans une étape dédiée, après la mise en place des Sites et Services AD. Voir la section [Stratégie de réplication des mots de passe (PRP)](#stratégie-de-réplication-des-mots-de-passe-prp).
+     La PRP sera configurée dans une étape dédiée, après la mise en place des Sites et Services AD. Voir la section [Stratégie de réplication des mots de passe (PRP)](../doc-site-services-ad)
     </Aside>
 
 8. Dans l'écran **"Chemins d'accès"**, modifier les chemins par défaut :
