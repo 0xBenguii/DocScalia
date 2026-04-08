@@ -186,14 +186,12 @@ Résultat obtenu après l’exécution du script PowerShell : la création réus
 ![Structure des OU de l'AD](../../../../assets/doc-technique/active-directory/ad-structure-ou.png)
 
 ---
-### Redirection des comptes ordinateurs
+### Redirection des comptes ordinateurs et utilisateurs
 
-Après la mise en place de la structure des Unités d’Organisation (OU) pour les sites de Paris et Lyon, la commande `redircmp` permet de rediriger automatiquement la création des comptes ordinateurs vers l’OU souhaitée.
+Après la mise en place de la structure des OU, les commandes `redircmp` et `redirusr` permettent de rediriger automatiquement la création des nouveaux objets vers l'OU Quarantaine, 
+plutôt que dans les conteneurs par défaut de l'Active Directory (`CN=Computers` et `CN=Users`).
 
-Sans cette redirection, les ordinateurs qui rejoignent le domaine seraient placés dans l’OU par défaut de l’Active Directory.
-Cela garantit que les nouveaux postes sont créés dans la bonne OU et qu’ils reçoivent immédiatement les **GPO** correspondant à leur emplacement.
-
-#### Mise en œuvre avec redircmp et redirusr
+#### Mise en œuvre
 
 La commande **redircmp** permet de rediriger tous les nouveaux comptes ordinateurs vers l’OU Quarantaine par défaut :
 
@@ -213,6 +211,7 @@ Tous les nouveaux objets intégreront le domaine dans un premier temps au sein d
 
 - Les **postes** seront ensuite déplacés vers leur **OU finale** correspondant à leur site et à leur type (Workstations ou Laptops).
 - Les **comptes utilisateurs** seront déplacés vers leur **OU cible** en fonction de leur site et de leur statut (Employés, Externes, Désactivés).
+
 ---
 
 <Aside type="tip" title="Structure organisationnelles terminées">
