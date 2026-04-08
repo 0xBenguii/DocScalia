@@ -21,6 +21,7 @@ Cette organisation permet :
 
 Le choix d'un **RODC** *(Read-Only Domain Controller)* pour le site de Lyon est motivé par l'absence de sécurité physique fiable. Cette solution permet de limiter l'exposition des données sensibles de l'annuaire tout en répondant au besoin de fournir un service d'authentification local.
 
+---
 ## Architecture de l'infrastructure
 
 ### Vue d'ensemble
@@ -252,7 +253,7 @@ Avant la promotion, le serveur doit rejoindre le domaine `freemotion.fr` :
 ![Ajout du RODC au domaine](../../../../assets/doc-technique/active-directory/ad-rodc01-prp-default.png)
 
     <Aside type="note" title="Configuration de la PRP">
-     La PRP sera configurée dans une étape dédiée, après la mise en place des Sites et Services AD. Voir la section [Stratégie de réplication des mots de passe (PRP)](../doc-site-services-ad)
+     La PRP sera configurée dans une étape dédiée, après la mise en place des Sites et Services AD. Voir la section [Stratégie de réplication des mots de passe (PRP)](../doc-replication-mdp-prp)
     </Aside>
 
 8. Dans l'écran **"Chemins d'accès"**, modifier les chemins par défaut :

@@ -23,6 +23,8 @@ Cette section détaille la configuration de la PRP, incluant la création des
 groupes de sécurité dédiés, la définition de leurs membres, ainsi que les étapes de paramétrage
 depuis le contrôleur de domaine principal `PRS-DC-01`.
 
+--- 
+
 ## Stratégie de réplication des mots de passe (PRP)
 
 La **Password Replication Policy (PRP)** contrôle quels comptes peuvent avoir leur mot de passe
@@ -84,7 +86,7 @@ puis leur déclaration dans la PRP depuis `PRS-DC-01`.
 6. Créer le groupe `GDL-RODC-Lyon-Refusés` et ajouter `GG-Admins-Domaine`
    ainsi que les comptes de service et comptes à privilèges élevés
 
-   ![Création du lien inter-site](../../../../assets/doc-technique/active-directory/ad-rodc-prp-grp-adlp.png)
+   ![Création du lien inter-site](../../../../assets/doc-technique/active-directory/ad-rodc-prp-grp-agdlp.png)
 </Steps>
 
 #### Phase 2 — Déclaration des groupes dans la PRP
