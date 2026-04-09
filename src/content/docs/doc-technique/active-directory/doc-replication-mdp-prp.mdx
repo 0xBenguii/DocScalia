@@ -16,13 +16,14 @@ Active Directory. La PRP permet de définir avec précision quels comptes sont a
 mot de passe mis en cache localement sur le RODC, et lesquels en sont explicitement exclus.
 
 Cette granularité est déterminante en matière de gestion des risques : en cas de compromission
-physique du RODC — scénario particulièrement à considérer pour un site distant comme Lyon — seuls
-les mots de passe effectivement mis en cache seraient exposés. Les comptes sensibles, privilégiés
+physique du RODC seuls les mots de passe effectivement mis en cache seraient exposés. Les comptes sensibles, privilégiés
 et de service doivent donc être systématiquement exclus de cette réplication.
 
-La présente section détaille la configuration recommandée de la PRP, incluant la création des
+Cette section détaille la configuration de la PRP, incluant la création des
 groupes de sécurité dédiés, la définition de leurs membres, ainsi que les étapes de paramétrage
 depuis le contrôleur de domaine principal `PRS-DC-01`.
+
+--- 
 
 ## Stratégie de réplication des mots de passe (PRP)
 
@@ -85,7 +86,7 @@ puis leur déclaration dans la PRP depuis `PRS-DC-01`.
 6. Créer le groupe `GDL-RODC-Lyon-Refusés` et ajouter `GG-Admins-Domaine`
    ainsi que les comptes de service et comptes à privilèges élevés
 
-   ![Création du lien inter-site](../../../../assets/doc-technique/active-directory/ad-rodc-prp-grp-adlp.png)
+   ![Création du lien inter-site](../../../../assets/doc-technique/active-directory/ad-rodc-prp-grp-agdlp.png)
 </Steps>
 
 #### Phase 2 — Déclaration des groupes dans la PRP
