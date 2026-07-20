@@ -1,0 +1,223 @@
+---
+title: Reverse proxy HAProxy
+description: Répartition de charge HAProxy et VIP flottante keepalived pour la DMZ Paris, déployées par Ansible, avec les tests de round-robin et de bascule.
+---
+import { Steps, Badge, Aside, Card, CardGrid } from '@astrojs/starlight/components';
+
+## Introduction
+
+Cette section fait suite au déploiement des serveurs web Nginx et décrit la mise en place des **reverse proxy** de la DMZ Paris. Deux nœuds HAProxy répartissent le trafic entrant sur les trois serveurs web, et keepalived assure leur haute disponibilité.
+
+L'ensemble est déployé par **Ansible**, garantissant une configuration identique sur les deux nœuds.
+
+---
+
+## Rôle des composants
+
+<CardGrid>
+<Card title="HAProxy" icon="random">
+Répartiteur de charge de niveau applicatif (L7). Il distribue le trafic HTTP sur les trois serveurs web en round-robin et surveille leur santé pour écarter automatiquement un serveur en panne.
+</Card>
+<Card title="keepalived" icon="approve-check-circle">
+Assure la haute disponibilité des reverse proxy via le protocole VRRP. Les deux nœuds partagent une adresse IP virtuelle flottante, portée par un seul nœud à la fois.
+</Card>
+</CardGrid>
+
+## Architecture
+
+| Nœud | IP DMZ | Rôle keepalived | Priorité |
+|---|---|---|---|
+| **PRS-RVP-01** | `10.9.175.10` | <Badge text="MASTER" variant="success" /> | 110 |
+| **PRS-RVP-02** | `10.9.175.11` | <Badge text="BACKUP" variant="caution" /> | 100 |
+| **VIP** | `10.9.175.9` | portée par le MASTER | . |
+
+Le trafic entre par la VIP `.9`. HAProxy répartit ensuite en round-robin sur les backends `10.9.175.20`, `.21` et `.22`. Si HAProxy tombe sur le MASTER, keepalived déplace la VIP sur le BACKUP.
+
+## Déploiement par Ansible
+
+Le rôle `haproxy` installe HAProxy et keepalived, autorise le bind sur la VIP même quand le nœud ne la porte pas encore, pose les deux configurations et démarre les services.
+
+```yaml
+- name: Paquets HAProxy et keepalived
+  apt:
+    name:
+      - haproxy
+      - keepalived
+    state: present
+
+- name: Autoriser le bind sur IP non locale
+  sysctl:
+    name: net.ipv4.ip_nonlocal_bind
+    value: "1"
+    state: present
+    reload: true
+
+- name: Configuration HAProxy
+  template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    validate: haproxy -c -f %s
+  notify: reload haproxy
+
+- name: Configuration keepalived
+  template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+  notify: restart keepalived
+```
+
+## Configuration HAProxy
+
+La liste des backends n'est pas écrite en dur, elle est générée depuis le groupe `web` de l'inventaire. Ajouter un serveur web revient à le déclarer dans l'inventaire, il apparaît alors tout seul dans HAProxy.
+
+```jinja
+backend web_servers
+    balance roundrobin
+{% for h in groups['web'] | sort %}
+    server {{ h }} {{ hostvars[h].dmz_ip }}:80 check
+{% endfor %}
+```
+
+Le fichier `/etc/haproxy/haproxy.cfg` réellement déployé sur **PRS-RVP-01** :
+
+```text
+global
+    log /dev/log local0
+    maxconn 2048
+    user haproxy
+    group haproxy
+    daemon
+
+defaults
+    mode http
+    log global
+    option httplog
+    option httpchk GET /
+    timeout connect 5s
+    timeout client 30s
+    timeout server 30s
+
+frontend http_in
+    bind 10.9.175.9:80
+    default_backend web_servers
+
+backend web_servers
+    balance roundrobin
+    server prs-web-01 10.9.175.20:80 check
+    server prs-web-02 10.9.175.21:80 check
+    server prs-web-03 10.9.175.22:80 check
+
+listen stats
+    bind 10.9.99.110:8404
+    stats enable
+    stats uri /
+    stats refresh 5s
+```
+
+<Aside type="note" title="Page de statistiques">
+La page de statistiques HAProxy est volontairement liée à l'adresse de management, elle n'est donc jamais exposée côté DMZ.
+</Aside>
+
+## Configuration keepalived
+
+Le script `chk_haproxy` surveille HAProxy. Son poids négatif fait chuter la priorité du nœud sous celle du BACKUP quand HAProxy meurt, ce qui déclenche la bascule de la VIP. Le fichier déployé sur le MASTER :
+
+```text
+vrrp_script chk_haproxy {
+    script "/bin/systemctl is-active --quiet haproxy"
+    interval 2
+    weight -20
+    fall 2
+    rise 2
+}
+
+vrrp_instance VI_DMZ {
+    state MASTER
+    interface eth0
+    virtual_router_id 51
+    priority 110
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass <mot de passe du cluster>
+    }
+    virtual_ipaddress {
+        10.9.175.9/24
+    }
+    track_script {
+        chk_haproxy
+    }
+}
+```
+
+Le BACKUP (**PRS-RVP-02**) utilise exactement la même configuration, seules changent deux valeurs : `state BACKUP` et `priority 100`.
+
+Le déploiement s'effectue en une commande :
+
+```bash
+ansible-playbook site.yml --limit haproxy
+```
+
+## Tests de validation
+
+### Répartition round-robin
+
+Six requêtes successives sur la VIP tournent proprement sur les trois backends.
+
+```console
+$ for i in $(seq 6); do curl -sI http://10.9.175.9 | grep -i x-backend; done
+x-backend: prs-bai-262-eq9-prs-web-02
+x-backend: prs-bai-262-eq9-prs-web-03
+x-backend: prs-bai-262-eq9-prs-web-01
+x-backend: prs-bai-262-eq9-prs-web-02
+x-backend: prs-bai-262-eq9-prs-web-03
+x-backend: prs-bai-262-eq9-prs-web-01
+```
+
+### Bascule du master
+
+<Steps>
+1. **La VIP est portée par le master**
+
+   ```console
+   [PRS-RVP-01] $ ip -4 addr show eth0 | grep 10.9.175.9
+       inet 10.9.175.9/24 scope global secondary eth0
+   ```
+
+2. **On coupe HAProxy sur le master**
+
+   ```console
+   [PRS-RVP-01] $ systemctl stop haproxy
+   ```
+
+3. **La VIP bascule sur le backup en 6 secondes**
+
+   ```console
+   [PRS-RVP-02] $ ip -4 addr show eth0 | grep 10.9.175.9
+       inet 10.9.175.9/24 scope global secondary eth0
+   ```
+
+4. **Le service continue de répondre pendant la panne**
+
+   ```console
+   $ for i in $(seq 6); do curl -sI http://10.9.175.9 | grep -i x-backend; done
+   x-backend: prs-bai-262-eq9-prs-web-01
+   x-backend: prs-bai-262-eq9-prs-web-02
+   x-backend: prs-bai-262-eq9-prs-web-03
+   x-backend: prs-bai-262-eq9-prs-web-01
+   x-backend: prs-bai-262-eq9-prs-web-02
+   x-backend: prs-bai-262-eq9-prs-web-03
+   ```
+
+5. **Le master reprend la VIP à son retour**
+
+   ```console
+   [PRS-RVP-01] $ systemctl start haproxy
+   [PRS-RVP-01] $ ip -4 addr show eth0 | grep 10.9.175.9
+       inet 10.9.175.9/24 scope global secondary eth0
+   ```
+</Steps>
+
+<Aside type="tip" title="Haute disponibilité validée">
+La répartition de charge et la bascule sont validées de bout en bout. Le trafic reste servi pendant la panne du reverse proxy maître, et le master reprend la main automatiquement à son rétablissement.
+</Aside>
