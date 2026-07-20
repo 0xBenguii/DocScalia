@@ -1,0 +1,186 @@
+---
+title: Provisionnement Terraform
+description: Déploiement automatisé des machines de la DMZ Paris sur Proxmox via Terraform et cloud-init, entièrement par l'API.
+---
+
+import { Steps, Aside, Badge } from '@astrojs/starlight/components';
+
+Les machines de la DMZ Paris sont déployées en Infrastructure as Code. Terraform pilote Proxmox à travers son API avec le provider `bpg/proxmox`, sans aucun accès shell à l'hyperviseur. Les cinq machines naissent de l'image cloud officielle Debian 12, et cloud-init leur applique leur configuration au premier démarrage.
+
+## Ce qui est déployé
+
+Cinq machines identiques au provisionnement, spécialisées ensuite par Ansible. Deux reverse proxy et trois serveurs web, toutes sur le bridge de la DMZ Paris.
+
+| VMID | Machine | Rôle | DMZ | Management |
+|---|---|---|---|---|
+| 911 | PRS-RVP-01 | HAProxy | 10.9.175.10 | 10.9.99.110 |
+| 912 | PRS-RVP-02 | HAProxy | 10.9.175.11 | 10.9.99.111 |
+| 913 | PRS-WEB-01 | Nginx | 10.9.175.20 | 10.9.99.120 |
+| 914 | PRS-WEB-02 | Nginx | 10.9.175.21 | 10.9.99.121 |
+| 915 | PRS-WEB-03 | Nginx | 10.9.175.22 | 10.9.99.122 |
+
+Chaque machine porte deux interfaces. La patte DMZ (`prsbaie9l2`) est celle de production et porte la route par défaut vers la VIP CARP du pfSense. La patte management (`prsbaie9l4`) est réservée à l'administration et à l'exécution d'Ansible.
+
+## Structure du code
+
+<Steps>
+1. **Arborescence**
+
+   ```text
+   terraform/
+     versions.tf     provider bpg/proxmox
+     provider.tf     connexion API
+     variables.tf    paramètres (bridges, gateway, DNS, image)
+     vms.tf          les 5 machines et leur cloud-init
+     outputs.tf      récapitulatif et inventaire Ansible
+     terraform.tfvars.example
+   ```
+
+2. **Provider et connexion**
+
+   Tout passe par l'API Proxmox. Le token et l'URL restent dans `terraform.tfvars`, jamais versionné.
+
+   ```hcl
+   terraform {
+     required_providers {
+       proxmox = {
+         source  = "bpg/proxmox"
+         version = "~> 0.60"
+       }
+     }
+   }
+
+   provider "proxmox" {
+     endpoint  = var.proxmox_endpoint
+     api_token = var.proxmox_api_token
+     insecure  = var.proxmox_insecure
+   }
+   ```
+
+3. **Définition des machines**
+
+   Les cinq machines vivent dans une seule structure et sont créées avec un `for_each`. Ajouter une machine revient à ajouter une ligne, ses adresses et son rôle.
+
+   ```hcl
+   locals {
+     dmz_vms = {
+       "prs-rvp-01" = { vmid = 911, ip = "10.9.175.10", mgmt_ip = "10.9.99.110", role = "haproxy", cores = 2, memory = 2048, disk = 20 }
+       "prs-rvp-02" = { vmid = 912, ip = "10.9.175.11", mgmt_ip = "10.9.99.111", role = "haproxy", cores = 2, memory = 2048, disk = 20 }
+       "prs-web-01" = { vmid = 913, ip = "10.9.175.20", mgmt_ip = "10.9.99.120", role = "web", cores = 1, memory = 1536, disk = 20 }
+       "prs-web-02" = { vmid = 914, ip = "10.9.175.21", mgmt_ip = "10.9.99.121", role = "web", cores = 1, memory = 1536, disk = 20 }
+       "prs-web-03" = { vmid = 915, ip = "10.9.175.22", mgmt_ip = "10.9.99.122", role = "web", cores = 1, memory = 1536, disk = 20 }
+     }
+   }
+
+   resource "proxmox_virtual_environment_vm" "dmz" {
+     for_each  = local.dmz_vms
+     name      = "prs-bai-262-eq9-${upper(each.key)}"
+     node_name = var.node_name
+     pool_id   = var.pool_id
+     vm_id     = each.value.vmid
+
+     cpu    { cores = each.value.cores, type = "host" }
+     memory { dedicated = each.value.memory }
+   }
+   ```
+
+4. **Disque importé depuis l'image cloud**
+
+   Le disque système vient directement de l'image cloud Debian 12, importée côté serveur puis agrandie à la taille voulue.
+
+   ```hcl
+   disk {
+     datastore_id = var.datastore
+     import_from  = var.image_import_volid
+     interface    = "scsi0"
+     size         = each.value.disk
+   }
+   ```
+
+5. **Les deux interfaces**
+
+   Chaque machine est raccordée à ses deux bridges, production puis management.
+
+   ```hcl
+   network_device { bridge = var.dmz_bridge,  model = "virtio" }  # net0 DMZ
+   network_device { bridge = var.mgmt_bridge, model = "virtio" }  # net1 management
+   ```
+
+6. **Configuration réseau par cloud-init**
+
+   cloud-init pose les adresses statiques au premier boot. Les blocs `ip_config` suivent l'ordre des interfaces, et seule la patte DMZ porte la route par défaut.
+
+   ```hcl
+   initialization {
+     ip_config {
+       ipv4 {
+         address = "${each.value.ip}/24"
+         gateway = var.dmz_gateway
+       }
+     }
+     ip_config {
+       ipv4 { address = "${each.value.mgmt_ip}/24" }
+     }
+     dns {
+       servers = var.dns_servers
+     }
+     user_account {
+       username = var.ci_user
+       keys     = [trimspace(var.ssh_public_key)]
+     }
+   }
+   ```
+
+7. **Inventaire Ansible généré par le code**
+
+   Un output construit l'inventaire directement depuis la structure des machines. Le provisionnement et le durcissement partagent ainsi la même source de vérité.
+
+   ```hcl
+   output "ansible_inventory" {
+     value = join("\n", concat(
+       ["[haproxy]"], local.haproxy_hosts,
+       ["", "[web]"], local.web_hosts,
+       ["", "[dmz:children]", "haproxy", "web"],
+     ))
+   }
+   ```
+</Steps>
+
+## Déploiement
+
+<Steps>
+1. **Renseigner les secrets**
+
+   ```bash
+   cp terraform.tfvars.example terraform.tfvars
+   ```
+
+   On y met l'URL de l'API, le token, le nœud et la clé publique SSH.
+
+2. **Initialiser et vérifier**
+
+   ```bash
+   terraform init
+   terraform plan
+   ```
+
+3. **Appliquer**
+
+   ```bash
+   terraform apply
+   ```
+
+   Les cinq machines apparaissent dans le pool du groupe, démarrées, avec leurs interfaces et leurs adresses.
+
+4. **Générer l'inventaire Ansible**
+
+   Le même code produit l'inventaire consommé ensuite par le durcissement.
+
+   ```bash
+   terraform output -raw ansible_inventory > ../ansible/inventory.ini
+   ```
+</Steps>
+
+<Aside type="note" title="Nomenclature et quota">
+Toutes les machines respectent le préfixe `prs-bai-262-eq9` et la plage de VMID du groupe. La DMZ consomme 8,5 Go de mémoire, dans le quota alloué sur l'hyperviseur mutualisé.
+</Aside>

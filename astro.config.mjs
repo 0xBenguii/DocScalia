@@ -43,13 +43,15 @@ export default defineConfig({
             { label: 'Plan d\'adressage IP', slug: 'infrastructure/plan-adressage' },
             { label: 'Topologie réseau', slug: 'infrastructure/topologie' },
             { label: 'Budget RAM Proxmox', slug: 'infrastructure/budget-ram' },
+            { label: 'Provisionnement Terraform', slug: 'infrastructure/terraform' },
           ],
         },
         {
           label: 'Documentations Technique',
           items: [
             { label: 'Introduction', slug: 'doc-technique' },
-            { 
+            { label: 'Durcissement ANSSI-BP-028', slug: 'doc-technique/hardening-anssi' },
+            {
               label: 'Active Directory',
               items: [
                 { label: 'Active Directory', slug: 'doc-technique/active-directory/doc-active-directory' },

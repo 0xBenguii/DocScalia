@@ -9,7 +9,7 @@ L'infrastructure cible de FreeMotions est conçue selon les principes du **Secur
 L'ensemble de l'infrastructure est virtualisé sur **Proxmox VE** pour le maquettage, et sera déployé sur des serveurs physiques dédiés en production. Le cloud **Exoscale** complète l'architecture on-premise pour les services exposés et la sauvegarde externalisée.
 
 <Aside type="caution" title="Note maquette Proxmox">
-  En production, les sites Paris et Lyon sont géographiquement séparés. La maquette simule les deux sites sur un hyperviseur unique **(pve3-ovh)** via des bridges distincts (vmbr).
+  En production, les sites Paris et Lyon sont géographiquement séparés. La maquette simule les deux sites sur un hyperviseur unique **(pve3-ovh)** via des bridges distincts (`vmbr1` pour le WAN, `prsbaie9l1` à `prsbaie9l6` pour les segments internes et la synchro pfSense).
 </Aside>
 
 ## Principes d'architecture
