@@ -62,6 +62,14 @@ export default defineConfig({
                 
               ],
             },
+            { 
+              label: 'Pare-feu',
+              items: [
+                { label: 'Haute disponibilité', slug: 'doc-technique/pfsense/doc-ha' },
+                { label: 'VPN IPsec', slug: 'doc-technique/pfsense/doc-vpn-ipsec' },
+                { label: 'Suricata', slug: 'doc-technique/pfsense/doc-suricata' },
+              ],
+            },
           ],
         },
       ],
