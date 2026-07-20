@@ -35,6 +35,6 @@ La gestion des risques est un processus continu tout au long du projet. Chaque r
 |---|---|---|---|---|
 | R11 | Compromission durant la phase de transition (attaque pendant la coexistence ancien/nouveau SI) | Faible | Critique | Security by Design : GPO de durcissement appliquées dès l'installation. Services exposés uniquement en DMZ derrière HAProxy. Suricata IDS/IPS actif dès le premier jour. Aucun service legacy en écoute sur le nouveau réseau. |
 | R12 | Phishing réussi sur les utilisateurs pilotes (vol de credentials, mouvement latéral) | Moyen | Moyen | Campagne de test phishing interne avant migration. Sensibilisation utilisateurs obligatoire. MFA activé sur tous les comptes M365 et VPN. Charte informatique signée par chaque collaborateur. |
-| R13 | Interférence entre groupes sur Proxmox mutualisé (conflit d'adressage, accès non autorisé à une VM) | Moyen | Fort | Isolation VLAN stricte par bridges dédiés (vmbr1→vmbr5). Nomenclature VM respectée (`[sqy-bai-262-eq9]`). Aucune VM connectée sur vmbr0 (réservé hôte). Vérification croisée des subnets avec les autres groupes. |
+| R13 | Interférence entre groupes sur Proxmox mutualisé (conflit d'adressage, accès non autorisé à une VM) | Moyen | Fort | Isolation stricte par bridges dédiés (vmbr1 WAN + prsbaie9l1→l6). Nomenclature VM respectée (`[prs-bai-262-eq9]`). Aucune VM connectée sur vmbr0 (réservé hôte). Vérification croisée des subnets avec les autres groupes. |
 
 
