@@ -52,6 +52,13 @@ export default defineConfig({
             { label: 'Introduction', slug: 'doc-technique' },
             { label: 'Durcissement ANSSI-BP-028', slug: 'doc-technique/hardening-anssi' },
             {
+              label: 'Web',
+              items: [
+                { label: 'Serveurs web Nginx', slug: 'doc-technique/web/nginx' },
+                { label: 'Reverse proxy HAProxy', slug: 'doc-technique/web/haproxy' },
+              ],
+            },
+            {
               label: 'Active Directory',
               items: [
                 { label: 'Active Directory', slug: 'doc-technique/active-directory/doc-active-directory' },
