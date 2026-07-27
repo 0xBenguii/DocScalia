@@ -1,0 +1,39 @@
+system_upgrade: true
+console_keymap: fr
+
+# net0 DMZ + net1 mgmt + net2 tailscale : loose reverse path filtering
+# sinon le trafic multi-patte peut se faire dropper
+rp_filter_mode: 2
+
+# 0 sur les serveurs, override à 1 dans host_vars pour un routeur
+ip_forward: 0
+
+ssh_password_auth: false
+ssh_permit_root_login: "no"
+
+# on ne se bannit pas soi-même : tailnet, segment tailscale et mgmt en liste blanche
+fail2ban_ignoreip:
+  - 127.0.0.1/8
+  - ::1
+  - 100.64.0.0/10
+  - 10.10.10.0/24
+  - 10.9.99.0/24
+fail2ban_maxretry: 3
+fail2ban_findtime: 600
+fail2ban_bantime: 3600
+
+pass_max_days: 90
+pass_min_days: 1
+pass_warn_age: 14
+pwquality_minlen: 12
+
+disabled_services:
+  - avahi-daemon
+  - cups
+  - cups-browsed
+  - bluetooth
+  - rpcbind
+  - nfs-common
+
+etckeeper_email: admin@freemotions.local
+etckeeper_name: Scalia Admin

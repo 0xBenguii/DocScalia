@@ -1,0 +1,39 @@
+- name: Paquets HAProxy et keepalived
+  apt:
+    name:
+      - haproxy
+      - keepalived
+    state: present
+    lock_timeout: 300
+
+# haproxy peut se lier a la VIP meme quand keepalived ne l'a pas encore posee
+- name: Autoriser le bind sur IP non locale
+  sysctl:
+    name: net.ipv4.ip_nonlocal_bind
+    value: "1"
+    state: present
+    reload: true
+
+- name: Configuration HAProxy
+  template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    mode: "0644"
+    validate: haproxy -c -f %s
+  notify: reload haproxy
+
+- name: Configuration keepalived
+  template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+    mode: "0644"
+  notify: restart keepalived
+
+- name: Services actifs
+  systemd:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  loop:
+    - haproxy
+    - keepalived

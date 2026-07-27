@@ -1,0 +1,4 @@
+# Variables du groupe haproxy.
+# Le mot de passe du cluster keepalived vient du vault chiffre (vault.yml),
+# on ne fait que le rebrancher sous un nom lisible ici.
+keepalived_pass: "{{ vault_keepalived_pass }}"

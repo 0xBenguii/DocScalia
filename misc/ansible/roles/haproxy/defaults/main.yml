@@ -1,0 +1,5 @@
+keepalived_vip: 10.9.175.9
+keepalived_vrid: 51
+keepalived_interface: eth0
+# keepalived_pass vient du vault chiffre (group_vars/haproxy/vault.yml)
+haproxy_stats_port: 8404
