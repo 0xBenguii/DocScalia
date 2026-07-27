@@ -1,0 +1,22 @@
+- name: reload ssh
+  systemd:
+    name: ssh
+    state: reloaded
+
+- name: restart fail2ban
+  systemd:
+    name: fail2ban
+    state: restarted
+
+- name: load auditd rules
+  command: augenrules --load
+  failed_when: false
+
+- name: restart journald
+  systemd:
+    name: systemd-journald
+    state: restarted
+
+- name: setupcon
+  command: setupcon --save-only
+  failed_when: false

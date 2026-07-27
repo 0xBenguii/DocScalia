@@ -1,0 +1,54 @@
+# Bootstrap reseau temporaire.
+# Tant que le pfSense Paris n'est pas deploye, les VM DMZ n'ont ni internet
+# ni DNS (leur gateway et resolveur 10.9.175.1 = VIP pfSense absente).
+# On les fait sortir par le routeur tailscale (10.10.10.1) le temps du build.
+# A retirer une fois le pfSense Paris en place.
+
+- name: NAT de sortie sur le routeur
+  hosts: routeur
+  become: true
+  tasks:
+    - name: Forwarding actif
+      sysctl:
+        name: net.ipv4.ip_forward
+        value: "1"
+        state: present
+        reload: true
+
+    - name: Masquerade du vlan tailscale vers le WAN
+      iptables:
+        table: nat
+        chain: POSTROUTING
+        source: 10.10.10.0/24
+        out_interface: eth0
+        jump: MASQUERADE
+        comment: "build: sortie internet DMZ via routeur"
+
+- name: Sortie internet temporaire des VM DMZ
+  hosts: dmz
+  become: true
+  tasks:
+    - name: Stopper unattended-upgrades bloque
+      systemd:
+        name: unattended-upgrades
+        state: stopped
+      failed_when: false
+
+    - name: Route par defaut via le routeur
+      command: ip route replace default via 10.10.10.1
+      changed_when: false
+
+    - name: DNS de build
+      copy:
+        content: "nameserver 1.1.1.1\nnameserver 9.9.9.9\n"
+        dest: /etc/resolv.conf
+        mode: "0644"
+
+    - name: Debloquer dpkg si interrompu
+      command: dpkg --configure -a
+      changed_when: false
+      failed_when: false
+
+    - name: Verifier l'acces internet
+      command: timeout 10 curl -sI http://deb.debian.org
+      changed_when: false

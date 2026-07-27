@@ -1,0 +1,25 @@
+-D
+-b 8192
+-f 1
+
+# Identites et authentification
+-w /etc/passwd -p wa -k identity
+-w /etc/shadow -p wa -k identity
+-w /etc/group -p wa -k identity
+-w /etc/gshadow -p wa -k identity
+-w /etc/sudoers -p wa -k scope
+-w /etc/sudoers.d/ -p wa -k scope
+
+# SSH et modules noyau
+-w /etc/ssh/sshd_config -p wa -k sshd
+-w /etc/ssh/sshd_config.d/ -p wa -k sshd
+-w /sbin/insmod -p x -k modules
+-w /sbin/rmmod -p x -k modules
+-w /sbin/modprobe -p x -k modules
+
+# Elevation de privileges
+-a always,exit -F arch=b64 -S execve -C uid!=euid -F euid=0 -k privesc
+-a always,exit -F arch=b32 -S execve -C uid!=euid -F euid=0 -k privesc
+
+# Immutabilite de la conf audit (garder en dernier)
+-e 2

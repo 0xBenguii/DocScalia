@@ -1,0 +1,2 @@
+# routeur tailscale : le forwarding doit rester actif malgre le durcissement
+ip_forward: 1
