@@ -9,7 +9,7 @@ import {LinkButton, Steps, Badge, Aside, Card, CardGrid, StarlightIcon } from '@
 ## Architecture
 
 Le tunnel IPsec relie les deux sites Freemotion via une liaison chiffrée établie entre les pare-feux pfSense de chaque site. 
-Le protocole IKEv2 a été retenu pour sa robustesse, sa gestion native du MOBIKE (reprise de session en cas de changement d'adresse IP) et sa compatibilité avec les mécanismes modernes d'authentification.
+Le protocole IKEv2 a été retenu pour sa robustesse et sa compatibilité avec les mécanismes modernes d'authentification.
 
 Chaque site étant configuré en haute disponibilité (CARP), le tunnel s'établit entre les adresses IP virtuelles (VIP) de chaque paire Master/Slave, garantissant la continuité du VPN en cas de bascule.
 
