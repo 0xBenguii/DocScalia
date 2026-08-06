@@ -21,7 +21,7 @@ L'architecture repose sur deux pfSense déployés en haute disponibilité (HA) v
 |-------|----------------|--------------------|------------------|-------------|
 | Paris | Pare-feu       | PRS-FW01          | 192.168.254.19       | <Badge text="Master" variant="success" />      |
 | Paris | Pare-feu       | PRS-FW02         | 192.168.254.29    | <Badge text="Slave" variant="caution" />        |
-| Paris | IP virtuelle   | PRS-FW-VIP                | 192.168.254.9      | <Badge text="VIP (CARP)" variant="note" />  |
+| Paris | IP virtuelle   | PRS-FW-VIP       | 192.168.254.9      | <Badge text="VIP (CARP)" variant="note" />  |
 | Lyon  | Pare-feu       | LY-FW01          | 192.168.254.49        | <Badge text="Master" variant="success" />      |
 | Lyon  | Pare-feu       | LY-FW02          | 192.168.254.59        | <Badge text="Slave" variant="caution" />       |
 | Lyon  | IP virtuelle   | LY-FW-VIP                  | 192.168.254.39      | <Badge text="VIP (CARP)" variant="note" />  |
@@ -58,15 +58,13 @@ Chaque site dispose ainsi de sa propre redondance locale, sans dépendance entre
 
 Chaque nœud pfSense est configuré avec les interfaces réseau suivantes :
 
-| Interface | Rôle                        | Site       |
-|-----------|-----------------------------|------------|
+| Interface | Rôle                         | Site         |
+|-----------|------------------------------|--------------|
 | WAN       | Connexion vers Internet      | Paris / Lyon |
 | LAN       | Réseau local du site         | Paris / Lyon |
-| OPT1      | Synchronisation pfSync       | Paris / Lyon |
-
-:::note
-L'interface OPT1 dédiée à pfSync n'est pas configurée lors de l'installation initiale. Elle est ajoutée et assignée ultérieurement depuis l'interface graphique de pfSense.
-:::
+| DMZ       | Réseau isolé                 | Paris / Lyon |
+| MGMT      | Réseau de mangement          | Paris / Lyon |
+| PFSYNC    | Synchronisation pfSync       | Paris / Lyon |
 
 ### Installation
 
@@ -98,36 +96,6 @@ La suite de la configuration s'effectue entièrement depuis cette interface.
 
 ![Accès à l'interface graphique](../../../../assets/doc-technique/pfsense/LY-FW02_Accès_Graphique.png)
 
-
-### Ajout de l'interface pfSync (OPT1)
-
-L'interface OPT1 est dédiée exclusivement à la synchronisation entre les deux nœuds pfSense d'un même site. 
-L'utilisation d'un réseau de synchronisation isolé est plus sécurisée que de faire transiter le trafic pfSync sur les interfaces LAN ou WAN, qui sont exposées au reste du réseau.
-
-Elle est ajoutée manuellement depuis l'interface graphique sur chacun des quatre nœuds.
-
-
-<Steps>
-    1. Dans **Interfaces > Assignments**.
-    2. **+** permet d'ajouter l'interface disponible - elle apparaît sous le nom **OPT1**.
-    3. Sélection de l'interface physique correspondante
-
-        ![Ajout de OPT1](../../../../assets/doc-technique/pfsense/LY-FW01_Add_OPT1.png)
-</Steps>
-
-L'interface OPT1 a été ajouté.
-
-
-### Configuration de l'interface OPT1
-   - Activation de l'interface **Enable Interface**.
-   - Description `PFSYNC`.
-   - Une adresse IP dédiée est renseigner pour la synchronisation.
-
-   ![Configuration de OPT1](../../../../assets/doc-technique/pfsense/LY-FW01_Config_OPT1_3.png)
-
-:::note
-Cette procédure est répété sur les quatre nœuds (PRS-FW01, PRS-FW02, LY-FW01, LY-FW02) en adaptant l'adresse IP de l'interface pfSync à chaque nœud.
-:::
 
 ### Création de l'IP virtuelle CARP
 
@@ -173,30 +141,23 @@ Les captures suivantes illustrent l'état des nœuds Master et Slave sur chacun 
 <Steps>
 
     1. Dans **System > High Availability**.
-    2. Cocher **Synchronize States** sur le Master et le Slave.
-    3. Sélectionner **PFSYNC** comme interface de synchronisation (**Synchronize Interface**).
-    4. Renseigner l'IP pfSync du nœud distant dans **pfSync Synchronize Peer IP** pour éviter les échanges en multicast.
+    2. **Synchronize States** est coché sur le Master et le Slave.
+    3. **PFSYNC** est séléctioné comme interface de synchronisation (**Synchronize Interface**).
+    ![Configuration HA](../../../../assets/doc-technique/pfsense/LY-FW01_Configuration_pfSync1.png) 
+    
+    4. L'IP pfSync du nœud distant est renseigné dans **pfSync Synchronize Peer IP** pour éviter les échanges en multicast.
 
 </Steps>
 
 La synchronisation pfSync est bidirectionnelle pour les états de connexion, mais la réplication de configuration via XMLRPC est quant à elle unidirectionnelle : seul le **Master** pousse sa configuration vers le **Slave**. 
+
 Le champ **Synchronize Config to IP** doit donc rester vide sur le Slave pour éviter tout conflit de configuration.
 
-##### Paris 
-**Master Paris** (PRS-FW01)
-![Configuration HA](../../../../assets/doc-technique/pfsense/PRS-FW01_Config_CARP_LAN_et_WAN.png) 
-
-
-**Slave Paris** (PRS-FW02)
-![Configuration HA](../../../../assets/doc-technique/pfsense/PRS-FW02_Config_CARP_LAN_et_WAN.png) 
-
-##### Lyon 
 **Master Lyon** (LY-FW01)
 ![Configuration HA](../../../../assets/doc-technique/pfsense/LY-FW01_Configuration_pfSync.png) 
 
 **Slave Lyon** (LY-FW02)
 ![Configuration HA](../../../../assets/doc-technique/pfsense/LY-FW02_Configuration_pfSync.png) 
-
 
 Dans le bloc **XMLRPC Sync**, les éléments suivants sont cochés sur les deux nœuds :
 
@@ -209,7 +170,6 @@ Dans le bloc **XMLRPC Sync**, les éléments suivants sont cochés sur les deux 
     - Synchronize Traffic Shaper
 
 
-
 ### Règle de pare-feu pour pfSync
 
 Par défaut, pfSense applique des règles de filtrage sur toutes les interfaces, y compris pfSync. 
@@ -217,19 +177,65 @@ Il est nécessaire d'ajouter une règle autorisant tout le trafic sur cette inte
 
 <Steps>
 1. Dans **Firewall > Rules > PFSYNC**.
-2. Ajouter une règle avec les paramètres suivants :
-   - **Action** : Pass
-   - **Source** : any
-   - **Destination** : any
+2. Ajout d'une règle avec les paramètres suivants :
+   - **Action** : `Pass`
+   - **Source** : `PFSYNC subnets` 
+   - **Destination** : `PFSYNC subnets`
+   - **Description** : `Synchronisation CARP /pfSync - Trafic interne`
 
 </Steps>
 
-![Règle de pare-feu pour pfSync](../../../../assets/doc-technique/pfsense/LY-FW01_Configuration_Regle_pfSync.png) 
+![Règle de pare-feu pour pfSync](../../../../assets/doc-technique/pfsense/PRS-FW01_Configuration_Regle_pfSync.png) 
 
+Contrairement aux interfaces WAN et IPsec exposées à des réseaux tiers, l'interface PFSYNC relie exclusivement les deux pare-feux d'une même paire HA via un lien point-à-point isolé. Une règle générale (Pass any) y est donc appliquée, le risque étant limité par cette isolation physique et logique du segment.
 
 :::note
-Cette règle est créée sur les quatre nœuds : PRS-FW01, PRS-FW02, LY-FW01 et LY-FW02.
+Cette règle est créée sur les Master de chaque nœuds : PRS-FW01, PRS-FW02, LY-FW01 et LY-FW02.
 :::
 
 L'ensemble de la configuration CARP et pfSync étant en place, 
 l'infrastructure de pare-feu du projet Freemotion assure désormais une redondance locale complète sur les sites de Paris et de Lyon.
+
+## Test de la haute disponibilité (CARP)
+
+Ce test valide le bon fonctionnement du mécanisme CARP entre les pare-feux Master et Backup, ainsi que la reprise effective du trafic lors d'une bascule.
+
+A l'état initial (**Status > CARP (failover)**) : le pare-feu principal affiche le statut **MASTER** sur ses interfaces VIP, son homologue **BACKUP**.
+
+
+<Steps>
+
+
+1. Lancement d'un ping continu depuis un poste du LAN vers la passerelle (VIP), afin d'observer la continuité du trafic pendant la bascule :
+
+    ![Ping continu avant bascule](../../../../assets/doc-technique/pfsense/PRS-FW01_Ping_Continu_avant_Bascule.png)
+
+2. Création d'une bascule volontaire sur le pare-feu Master, en activant le mode maintenance persistant (**Status > CARP (failover) > Enter Persistent CARP Maintenance Mode**).
+
+3. Changement de statut : le pare-feu Master passe en **BACKUP**, et le pare-feu Backup bascule en **MASTER**, reprenant les VIP.
+    ![CARP Backup devient Master](../../../../assets/doc-technique/pfsense/PRS-FW02_CARP_Status_After.png)
+
+4. Consultation des logs système (**Status > System Logs > System**) sur les deux pare-feux, afin de confirmer les événements de bascule CARP (`CARP state`).
+    ![CARP System Log](../../../../assets/doc-technique/pfsense/PRS-FW01_CARP_Sys_Log.png)
+
+5. Désactivation du mode maintenance pour revenir à l'état initial, et la bascule inverse s'effectue correctement (retour en MASTER sur le pare-feu principal).
+    ![CARP Master retour de bascule](../../../../assets/doc-technique/pfsense/PRS_FW01_CARP_Status_Leave_Maintenance_Mode.png)
+
+</Steps>
+
+:::note
+Aucune interruption n'a été détecté lors du ping pendant la transition. 
+![Ping continu pendant bascule](../../../../assets/doc-technique/pfsense/PRS-FW01-Ping_Continu_Bascule.png)
+
+:::
+
+La bascule CARP entre les pare-feux Master et Backup est ainsi validée, confirmant la continuité de service en cas d'indisponibilité du pare-feu principal.
+
+
+## Conclusion
+
+La mise en place de la haute disponibilité pfSense sur les sites de Paris et de Lyon repose sur deux mécanismes complémentaires : la synchronisation d'état via pfSync (protocole 240) et la synchronisation de configuration via XML-RPC (HTTPS/443), tous deux transitant par une interface dédiée reliant les nœuds Master et Slave de chaque site.
+
+Cette architecture garantit une continuité de service en cas de bascule CARP, chaque nœud Slave disposant en permanence d'une configuration et d'une table d'états à jour, synchronisées automatiquement depuis le nœud Master. L'interface pfSync, isolée et restreinte au lien point-à-point entre les deux membres du cluster, assure que ces échanges critiques restent cloisonnés du reste du trafic réseau.
+
+Cette redondance, déployée de manière homogène sur les deux sites, s'inscrit dans une démarche de résilience infrastructure conforme aux exigences de disponibilité.

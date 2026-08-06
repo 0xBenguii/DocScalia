@@ -73,8 +73,8 @@ export default defineConfig({
               label: 'Pare-feu',
               items: [
                 { label: 'Haute disponibilité', slug: 'doc-technique/pfsense/doc-ha' },
-                { label: 'VPN IPsec', slug: 'doc-technique/pfsense/doc-vpn-ipsec' },
-                { label: 'Suricata', slug: 'doc-technique/pfsense/doc-suricata' },
+                { label: 'VPN IPsec inter-site', slug: 'doc-technique/pfsense/doc-vpn-ipsec' },
+                { label: 'Détection et prévention d\'intrusions & Géoblocage', slug: 'doc-technique/pfsense/doc-suricata-pfblockerng' },
               ],
             },
           ],
