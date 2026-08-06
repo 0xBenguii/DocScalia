@@ -1,0 +1,26 @@
+# poids negatif : si haproxy meurt sur le master, sa priorite chute sous le backup
+vrrp_script chk_haproxy {
+    script "/bin/systemctl is-active --quiet haproxy"
+    interval 2
+    weight -20
+    fall 2
+    rise 2
+}
+
+vrrp_instance VI_DMZ {
+    state {{ keepalived_state }}
+    interface {{ keepalived_interface }}
+    virtual_router_id {{ keepalived_vrid }}
+    priority {{ keepalived_priority }}
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass {{ keepalived_pass }}
+    }
+    virtual_ipaddress {
+        {{ keepalived_vip }}/24
+    }
+    track_script {
+        chk_haproxy
+    }
+}

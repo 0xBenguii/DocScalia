@@ -1,0 +1,7 @@
+# Secrets et état local — filet de sécurité si ce dossier est un jour copié dans le dépôt
+*.tfvars
+!*.tfvars.example
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log

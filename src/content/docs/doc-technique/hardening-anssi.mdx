@@ -1,0 +1,194 @@
+---
+title: Durcissement ANSSI-BP-028
+description: Base de durcissement commune appliquée à toutes les machines Linux du projet via un rôle Ansible aligné sur le guide ANSSI-BP-028.
+---
+
+import { Steps, Aside, Badge } from '@astrojs/starlight/components';
+
+Toutes les machines Linux du projet partagent une seule base de durcissement, appliquée par un rôle Ansible aligné sur le guide **ANSSI-BP-028**. L'intérêt est l'homogénéité. Chaque serveur, quel que soit son rôle, reçoit exactement la même configuration de sécurité. Les rares différences entre machines se règlent par une variable, jamais par un fichier séparé.
+
+## Structure du rôle
+
+Un seul rôle `common`, entièrement paramétré. Les valeurs par défaut vivent dans `defaults`, les fichiers de configuration sont des gabarits Jinja2 rendus avec les variables de chaque machine.
+
+```text
+roles/common/
+  defaults/main.yml     valeurs par défaut (variables du durcissement)
+  tasks/main.yml        enchaînement des tâches
+  handlers/main.yml     rechargements de services
+  templates/
+    99-anssi-sysctl.conf.j2
+    99-anssi-ssh.conf.j2
+    sshd.local.j2
+    99-anssi-pwquality.conf.j2
+    keyboard.j2
+  files/
+    99-anssi.rules       règles auditd
+    99-persistent.conf   journald persistant
+    99-anssi-blacklist.conf
+```
+
+## Les variables de réglage
+
+Tout le comportement du durcissement se pilote depuis `defaults`. C'est aussi là que se lisent les trois réglages sensibles de notre architecture, le mode du reverse path filter, le forwarding et la liste blanche de fail2ban.
+
+```yaml
+console_keymap: fr
+
+# reverse path filter en mode souple, adapté aux machines multi interfaces
+rp_filter_mode: 2
+
+ssh_password_auth: false
+ssh_permit_root_login: "no"
+
+# réseaux jamais bannis, dont le réseau d'administration
+fail2ban_ignoreip:
+  - 127.0.0.1/8
+  - 10.9.99.0/24
+fail2ban_maxretry: 3
+fail2ban_findtime: 600
+fail2ban_bantime: 3600
+
+pass_max_days: 90
+pwquality_minlen: 12
+
+disabled_services:
+  - avahi-daemon
+  - cups
+  - bluetooth
+  - rpcbind
+  - nfs-common
+```
+
+## Noyau et réseau
+
+Le cœur du durcissement. Ces paramètres bloquent l'usurpation d'adresse, refusent les redirections ICMP et le routage source, activent les protections contre le SYN flood et verrouillent la mémoire du noyau. Les deux valeurs pilotées par variable apparaissent en tête.
+
+```ini
+# Réseau IPv4
+net.ipv4.conf.all.rp_filter = {{ rp_filter_mode }}
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv4.conf.all.send_redirects = 0
+net.ipv4.conf.all.accept_source_route = 0
+net.ipv4.conf.all.log_martians = 1
+net.ipv4.icmp_echo_ignore_broadcasts = 1
+net.ipv4.tcp_syncookies = 1
+net.ipv4.tcp_rfc1337 = 1
+
+# Noyau
+kernel.randomize_va_space = 2
+kernel.dmesg_restrict = 1
+kernel.kptr_restrict = 2
+kernel.yama.ptrace_scope = 1
+kernel.unprivileged_bpf_disabled = 1
+
+# Système de fichiers
+fs.protected_hardlinks = 1
+fs.protected_symlinks = 1
+fs.suid_dumpable = 0
+```
+
+## SSH
+
+Connexion par clé uniquement, compte root fermé, et négociation limitée aux algorithmes modernes. La bannière légale et la journalisation détaillée complètent le tout.
+
+```text
+PermitRootLogin no
+PasswordAuthentication no
+PubkeyAuthentication yes
+MaxAuthTries 3
+LoginGraceTime 30
+ClientAliveInterval 300
+X11Forwarding no
+AllowTcpForwarding no
+LogLevel VERBOSE
+Banner /etc/issue.net
+
+KexAlgorithms sntrup761x25519-sha512@openssh.com,curve25519-sha256,diffie-hellman-group16-sha512
+Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes256-ctr
+MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com
+```
+
+Les clés hôtes faibles sont supprimées, seules les clés Ed25519 et RSA restent en place.
+
+## Traçabilité auditd
+
+auditd surveille les fichiers d'identité, la configuration SSH, le chargement de modules noyau et les élévations de privilèges. La dernière ligne rend la configuration d'audit immuable.
+
+```text
+# Identités et authentification
+-w /etc/passwd -p wa -k identity
+-w /etc/shadow -p wa -k identity
+-w /etc/sudoers -p wa -k scope
+
+# SSH et modules noyau
+-w /etc/ssh/sshd_config -p wa -k sshd
+-w /sbin/insmod -p x -k modules
+-w /sbin/modprobe -p x -k modules
+
+# Élévations de privilèges
+-a always,exit -F arch=b64 -S execve -C uid!=euid -F euid=0 -k privesc
+
+-e 2
+```
+
+## Mots de passe et bannissement
+
+La complexité impose douze caractères et quatre classes de caractères, y compris pour root.
+
+```ini
+minlen = 12
+dcredit = -1
+ucredit = -1
+lcredit = -1
+ocredit = -1
+enforce_for_root
+```
+
+fail2ban surveille le service SSH et bannit une heure après trois échecs, tout en épargnant le réseau d'administration.
+
+```ini
+[sshd]
+enabled  = true
+maxretry = 3
+findtime = 600
+bantime  = 3600
+```
+
+## Une base unique pour tout le parc
+
+L'inventaire regroupe toutes les machines Linux sous un même ensemble, joint par le réseau de management. Le rôle `common` s'applique à ce groupe, donc au parc entier d'un seul geste.
+
+```ini
+[web]
+prs-web-01 ansible_host=10.9.99.120
+prs-web-02 ansible_host=10.9.99.121
+prs-web-03 ansible_host=10.9.99.122
+
+[haproxy]
+prs-rvp-01 ansible_host=10.9.99.110
+prs-rvp-02 ansible_host=10.9.99.111
+
+[linux:children]
+web
+haproxy
+```
+
+La seule différence d'une machine à l'autre se déclare dans `host_vars`. Un serveur mono interface peut par exemple repasser le reverse path filter en mode strict, et le gabarit sysctl reprend cette valeur au rendu.
+
+```yaml
+# host_vars/adm-wazuh.yml
+rp_filter_mode: 1
+```
+
+## Application
+
+```bash
+ansible-playbook site.yml
+```
+
+Le durcissement s'applique en une passe sur l'ensemble du parc.
+
+<Aside type="tip" title="Résultat attendu">
+Après exécution, chaque machine présente `fail2ban` et `auditd` actifs, une connexion SSH restreinte à la clé, et les paramètres noyau ANSSI en place. Le rôle est idempotent, une nouvelle exécution ne change rien si la machine est déjà conforme.
+</Aside>

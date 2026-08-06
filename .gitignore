@@ -14,6 +14,10 @@ node_modules/
 # macOS
 .DS_Store
 
+# Windows (Alternate Data Streams / marque de zone)
+*Zone.Identifier
+*:Zone.Identifier
+
 # claude
 CLAUDE.md
 

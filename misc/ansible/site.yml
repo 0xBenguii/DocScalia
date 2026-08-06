@@ -1,0 +1,17 @@
+- name: Base commune et durcissement ANSSI-BP-028
+  hosts: linux
+  become: true
+  roles:
+    - common
+
+- name: Serveurs web Nginx
+  hosts: web
+  become: true
+  roles:
+    - web
+
+- name: Reverse proxy HAProxy et VIP keepalived
+  hosts: haproxy
+  become: true
+  roles:
+    - haproxy

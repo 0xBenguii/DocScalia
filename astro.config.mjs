@@ -15,7 +15,7 @@ export default defineConfig({
       },
       customCss: ['./src/styles/custom.css'],
       social: {
-        github: 'https://github.com/benguiii/DocScalia',
+        github: 'https://github.com/0xBenguii/DocScalia',
       },
       sidebar: [
         {
@@ -43,13 +43,22 @@ export default defineConfig({
             { label: 'Plan d\'adressage IP', slug: 'infrastructure/plan-adressage' },
             { label: 'Topologie réseau', slug: 'infrastructure/topologie' },
             { label: 'Budget RAM Proxmox', slug: 'infrastructure/budget-ram' },
+            { label: 'Provisionnement Terraform', slug: 'infrastructure/terraform' },
           ],
         },
         {
           label: 'Documentations Technique',
           items: [
             { label: 'Introduction', slug: 'doc-technique' },
-            { 
+            { label: 'Durcissement ANSSI-BP-028', slug: 'doc-technique/hardening-anssi' },
+            {
+              label: 'Web',
+              items: [
+                { label: 'Serveurs web Nginx', slug: 'doc-technique/web/nginx' },
+                { label: 'Reverse proxy HAProxy', slug: 'doc-technique/web/haproxy' },
+              ],
+            },
+            {
               label: 'Active Directory',
               items: [
                 { label: 'Active Directory', slug: 'doc-technique/active-directory/doc-active-directory' },

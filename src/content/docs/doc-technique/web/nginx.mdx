@@ -1,0 +1,91 @@
+---
+title: Serveurs web Nginx
+description: Déploiement et configuration des trois serveurs web Nginx de la DMZ Paris par Ansible, avec les tests de validation en ligne de commande.
+---
+import { Steps, Badge, Aside, Card, CardGrid } from '@astrojs/starlight/components';
+
+## Introduction
+
+Dans le cadre de la refonte du système d'information de **Freemotion**, les services exposés en DMZ s'appuient sur trois serveurs web **Nginx** hébergeant le contenu du site. Ces serveurs sont placés derrière les reverse proxy HAProxy, qui répartissent la charge entre eux.
+
+Nginx a été retenu pour sa légèreté et ses performances. Le déploiement et la configuration des trois serveurs sont entièrement automatisés par **Ansible**, ce qui garantit une configuration strictement identique sur les trois nœuds.
+
+---
+
+## Architecture
+
+Les trois serveurs sont déployés dans la DMZ Paris, sur le réseau `10.9.175.0/24`.
+
+| Serveur | Site | IP DMZ | Rôle |
+|---|---|---|---|
+| **PRS-WEB-01** | Paris | `10.9.175.20` | Serveur web Nginx |
+| **PRS-WEB-02** | Paris | `10.9.175.21` | Serveur web Nginx |
+| **PRS-WEB-03** | Paris | `10.9.175.22` | Serveur web Nginx |
+
+<Card title="Pourquoi trois serveurs" icon="approve-check-circle">
+La redondance permet de répartir la charge et de survivre à la panne d'un nœud sans coupure visible. Le trafic bascule automatiquement sur les serveurs restants grâce à HAProxy.
+</Card>
+
+## Déploiement par Ansible
+
+Le rôle `web` automatise l'installation et la configuration de Nginx. Il installe le paquet, s'assure que le service démarre au boot, et ajoute un en-tête d'identification.
+
+```yaml
+- name: Nginx
+  apt:
+    name: nginx
+    state: present
+
+- name: En-tete d'identification du backend
+  copy:
+    content: "add_header X-Backend $hostname always;\n"
+    dest: /etc/nginx/conf.d/00-backend-id.conf
+    mode: "0644"
+  notify: reload nginx
+
+- name: Nginx actif
+  systemd:
+    name: nginx
+    enabled: true
+    state: started
+```
+
+L'en-tête `X-Backend` expose le nom du serveur qui a répondu. Il n'a aucun effet sur la page servie et sert uniquement à vérifier la répartition de charge depuis la ligne de commande.
+
+```nginx
+add_header X-Backend $hostname always;
+```
+
+Le déploiement s'effectue en une commande :
+
+```bash
+ansible-playbook site.yml --limit web
+```
+
+## Tests de validation
+
+Sur chacun des trois serveurs, une requête locale renvoie un code **200** et l'en-tête qui l'identifie.
+
+```console
+200 prs-bai-262-eq9-prs-web-01
+200 prs-bai-262-eq9-prs-web-02
+200 prs-bai-262-eq9-prs-web-03
+```
+
+La réponse HTTP complète confirme Nginx en service et l'en-tête d'identification.
+
+```console
+$ curl -sI http://10.9.175.20
+HTTP/1.1 200 OK
+server: nginx/1.22.1
+content-type: text/html
+x-backend: prs-bai-262-eq9-prs-web-01
+```
+
+<Aside type="note" title="Contenu servi">
+Les serveurs servent la page d'accueil Nginx par défaut. Le contenu applicatif de Freemotion se déposera plus tard sur ces mêmes serveurs, la répartition et la haute disponibilité restant identiques.
+</Aside>
+
+<Aside type="tip" title="Serveurs web opérationnels">
+Les trois serveurs web sont déployés et configurés à l'identique. La prochaine étape met en place les **reverse proxy HAProxy** qui répartissent la charge entre eux. Voir la section [Reverse proxy HAProxy](../haproxy).
+</Aside>

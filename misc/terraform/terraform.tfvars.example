@@ -1,0 +1,12 @@
+# copier en terraform.tfvars et compléter (ne jamais commiter le vrai fichier)
+
+proxmox_endpoint  = "https://IP-OU-FQDN:8006/"
+proxmox_api_token = "user@realm!tokenid=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+node_name         = "pve3-ovh"
+datastore         = "local"
+ssh_public_key    = "ssh-ed25519 AAAA..."
+ci_password       = "MotDePasseConsole"
+
+# optionnel, valeurs par défaut dans variables.tf :
+# pool_id, vm_name_prefix, dmz_bridge, mgmt_bridge, tsa_bridge,
+# dmz_gateway, dns_servers, ci_user, qemu_agent, image_import_volid
