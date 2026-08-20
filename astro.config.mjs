@@ -85,6 +85,8 @@ export default defineConfig({
               ],
             },
             { 
+            },
+            { 
               label: 'Serveur RDS',
               items: [
                 { label: 'Serveur RDS', slug: 'doc-technique/serveur-rds/doc-serveur-rds' },
