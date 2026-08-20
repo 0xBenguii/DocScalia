@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ---
 title: Stratégie de groupe (GPO)
 description: Vue d'ensemble de la mise en place des stratégies de groupe (GPO) pour le projet Scalia - FreeMotions.
@@ -6,3 +7,74 @@ import {LinkButton, Steps, Badge, Aside, Card, CardGrid, StarlightIcon } from '@
 
 ## Introduction
 
+=======
+---
+title: Liste des GPO mises en place
+description: Inventaire des GPO déployées sur le domaine Freemotion, avec leur périmètre, leur objectif et leurs paramètres clés.
+---
+
+import {LinkButton, Steps, Badge, Aside, Card, CardGrid, StarlightIcon } from '@astrojs/starlight/components';
+
+Cette page recense l'ensemble des GPO déployées sur le domaine Freemotion. Comme pour les autres mécanismes de ciblage du projet, l'application des GPO repose autant que possible sur des **groupes de sécurité dédiés** plutôt que sur une OU entière, afin de garder la main sur le périmètre utilisateur sans dépendre de l'arborescence AD.
+
+## Vue d'ensemble
+
+
+| Nom GPO                                   | OU liée  | Objectif |
+|-------------------------------------------|----------|----------|
+| `Audit_Files_Folders_Access`              | `Infra`  | Activation de la stratégie d'audit d'accès aux objets (réussite/échec) sur le serveur de fichiers, en support du rôle FSRM |
+| `Redirection_Bureau_Documents`            | `_Sites` | Redirection des dossiers Documents et Bureau des utilisateurs itinérants vers un partage serveur dédié par site |
+| `Raccourcis_RemoteApp_Bureau_Utilisateur` | `_Sites` | Activée | Déploiement d'un raccourci vers le portail RDWeb sur le bureau des utilisateurs autorisés |
+---
+
+## Audit_Files_Folders_Access
+
+| Champ                    | Détail |
+|--------------------------|---|
+| **Nom GPO**              | `Audit_Files_Folders_Access` |
+| **OU liée**              | Unité d'organisation contenant le serveur de fichiers `PRS-FILE-01` |
+| **Statut**               | Activée |
+| **Objectif**             | Activer la journalisation des accès aux objets sur le serveur de fichiers, en complément des SACL posées sur les dossiers de service, dans le cadre du volet audit du rôle FSRM |
+| **Paramètres clés**      | `Configuration ordinateur > Stratégies > Paramètres Windows > Paramètres de sécurité > Stratégie d'audit` — paramètre **Auditer l'accès aux objets** activé en **Réussite** et **Échec** |
+| **Filtrage de sécurité** | Limité au serveur de fichiers concerné (`PRS-FILE-01`) |
+| **Dépendances**          | SACL configurées manuellement sur chaque dossier de service (onglet Sécurité > Avancé > Audit), avec propagation aux sous-dossiers et fichiers ; principal audité : `Utilisateurs du domaine` |
+| **Événements générés**   | Journal **Sécurité** de l'Observateur d'événements, source `Microsoft Windows security auditing`, catégorie de tâches `File System` — trace les accès (lecture/écriture/suppression) et les modifications de permissions NTFS |
+| **Contexte fonctionnel** | Cette GPO est l'un des quatre piliers du rôle FSRM sur `PRS-FILE-01`, aux côtés des quotas (1 Go inconditionnel par dossier de service), du filtrage d'extensions (blocage exécutables + ISO) et de la classification automatique (propriété "Confidentiel" sur le dossier Direction) |
+
+---
+
+## Redirection_Bureau_Documents
+
+| Champ                    | Détail |
+|--------------------------|--------|
+| **Nom GPO**              | `Redirection_Bureau_Documents` |
+| **OU liée**              | `_Sites` (regroupe les utilisateurs itinérants) |
+| **Statut**               | Activée |
+| **Objectif**             | Rediriger les dossiers Documents et Bureau des utilisateurs itinérants Freemotion vers un partage serveur dédié par site, avec fichiers hors connexion pour garantir l'accès aux données en cas de coupure réseau ou de déplacement hors site |
+| **Paramètres clés**      | Redirection avancée par groupe (Documents + Bureau), option « Créer un dossier pour chaque utilisateur sous le chemin d'accès racine », droits exclusifs de l'utilisateur sur le dossier |
+| **Filtrage de sécurité** | `GRP-Dossier-Redirection-Paris`, `GRP-Dossier-Redirection-Lyon` (le groupe `Utilisateurs authentifiés` a été retiré du filtrage) |
+| **Délégation**           | `Utilisateurs authentifiés` — droit Lecture uniquement |
+| **Cibles techniques**    | `\\PRS-FILE-01\Profils-Paris$` (Paris) et `\\PRS-FILE-01\Profils-Lyon$` (Lyon) |
+| **Dépendances**          | Partages SMB avec énumération basée sur l'accès et mise en cache activée ; permissions NTFS explicites par site (héritage désactivé) |
+| **Points d'attention**   | Serveur de fichiers unique (`PRS-FILE-01`) : un itinérant dépend du lien VPN inter-sites pour accéder à ses dossiers au quotidien tant que le cache hors connexion n'a pas pris le relais. Le RODC de Lyon ne pouvant pas répliquer une écriture qu'il n'a pas reçue, la création des groupes/l'ajout de membres se fait depuis le DC de Paris (en écriture) |
+
+--- 
+
+## Raccourcis_RemoteApp_Bureau_Utilisateur
+
+| Champ | Détail |
+|--------------------------|---|
+| **Nom GPO**              | `Raccourcis_RemoteApp_Bureau_Utilisateur` |
+| **OU liée**              | `_Sites` (contient les comptes utilisateurs concernés) |
+| **Statut**               | Activée |
+| **Objectif**             | Déployer automatiquement un raccourci vers le portail RDWeb sur le bureau des utilisateurs autorisés, sans saisie manuelle de l'URL |
+| **Paramètres clés**      | `Configuration utilisateur > Préférences > Paramètres Windows > Raccourcis` — Action **Créer**, nom `Ressource Applicatif`, type de cible **URL**, emplacement **Bureau**, URL cible `https://PRS-RDS-01.freemotion.fr/RDWeb` |
+| **Filtrage de sécurité** | `GDL_RDS_QuickSession_Access` (modèle AGDLP : groupes globaux métier imbriqués dans ce groupe local de domaine) |
+| **Délégation**           | `Utilisateurs authentifiés` en Lecture (nécessaire à l'évaluation correcte de la GPO) ; `GDL_RDS_QuickSession_Access` conserve Lecture + Appliquer la stratégie de groupe |
+| **Dépendances**          | Groupe `GDL_RDS_QuickSession_Access` existant selon le modèle AGDLP ; portail RDWeb fonctionnel sur `PRS-RDS-01.freemotion.fr` |
+| **Tests réalisés**       | Ouverture de session avec un utilisateur membre de `GG_Acces_RDP` : raccourci `Ressource Applicatif` présent sur le bureau, portail RDWeb accessible, ressources RemoteApp affichées et connexion RDS établie avec succès |
+| **Points d'attention**   | Le filtrage de sécurité (et non la délégation) est le mécanisme qui restreint réellement la distribution du raccourci ; l'ajout d'`Utilisateurs authentifiés` en lecture seule ne l'étend pas à tout le domaine |
+
+---
+
+>>>>>>> 1082c9f (ADD Docs Serveur de Fichiers ; ADD Docs Serveur RDS ; UPDATE Doc GPO ; UPDATE assets Docs pfSense)

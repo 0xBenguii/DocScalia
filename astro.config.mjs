@@ -66,7 +66,14 @@ export default defineConfig({
                 { label: 'Structure de l\'annuaire', slug: 'doc-technique/active-directory/doc-structure-ou-ad' },
                 { label: 'Réplication des mots de passe (PRP)', slug: 'doc-technique/active-directory/doc-replication-mdp-prp' },
                 { label: 'Stratégie de groupe (GPO)', slug: 'doc-technique/active-directory/doc-gpo' },
-                
+              ],
+            },
+            { 
+              label: 'Serveur de fichiers',
+              items: [
+                { label: 'Partages et arborescence', slug: 'doc-technique/serveur-fichiers/doc-dossier-partage-arborescence' },
+                { label: 'FSRM', slug: 'doc-technique/serveur-fichiers/doc-serveur-fsrm' },
+                { label: 'Redirection de dossiers (itinérance)', slug: 'doc-technique/serveur-fichiers/doc-redirection-dossiers' },
               ],
             },
             { 
@@ -75,6 +82,13 @@ export default defineConfig({
                 { label: 'Haute disponibilité', slug: 'doc-technique/pfsense/doc-ha' },
                 { label: 'VPN IPsec inter-site', slug: 'doc-technique/pfsense/doc-vpn-ipsec' },
                 { label: 'Détection et prévention d\'intrusions & Géoblocage', slug: 'doc-technique/pfsense/doc-suricata-pfblockerng' },
+              ],
+            },
+            { 
+              label: 'Serveur RDS',
+              items: [
+                { label: 'Serveur RDS', slug: 'doc-technique/serveur-rds/doc-serveur-rds' },
+                { label: 'Accès au Ressources Applicatives', slug: 'doc-technique/serveur-rds/doc-gpo-acces-rds' },
               ],
             },
           ],
